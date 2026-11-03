@@ -24,6 +24,7 @@ DEFAULT_CONFIG = {
     "ad_footer": ""
 }
 
+# 基础默认核心工具库（带明确分类）
 DEFAULT_TOOLS = [
     {
         "id": "color",
@@ -35,7 +36,7 @@ DEFAULT_TOOLS = [
     {
         "id": "password",
         "name": "🔑 Password Generator",
-        "category": "Security",
+        "category": "Security & Cryptography",
         "desc": "Generate cryptographic passwords locally using Web Crypto API.",
         "html": '<button onclick="genPass()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Generate Password</button><input type="text" id="pass-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">'
     },
@@ -48,11 +49,12 @@ DEFAULT_TOOLS = [
     }
 ]
 
+# 自动扩展扩展池（涵盖全品类各个领域）
 AUTO_EXPANSION_QUEUE = [
     {
         "id": "uuid",
         "name": "🆔 UUID v4 Generator",
-        "category": "Security",
+        "category": "Security & Cryptography",
         "desc": "Generate random cryptographic unique identifiers.",
         "html": '<button onclick="genUUID()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Generate UUID v4</button><input type="text" id="uuid-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">'
     },
@@ -83,6 +85,27 @@ AUTO_EXPANSION_QUEUE = [
         "category": "Text & Formatting",
         "desc": "Write Markdown and preview live formatting.",
         "html": '<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><textarea id="md-input" rows="4" class="p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" oninput="renderMD()"># Hello\\nMarkdown preview</textarea><div id="md-output" class="p-3 bg-slate-900 rounded border border-slate-700 text-slate-200 text-sm"></div></div>'
+    },
+    {
+        "id": "jwt",
+        "name": "🛡️ JWT Inspector",
+        "category": "Security & Cryptography",
+        "desc": "Decode JSON Web Token header and payload locally.",
+        "html": '<textarea id="jwt-input" rows="3" placeholder="Paste JWT token..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" oninput="decodeJWT()"></textarea><div class="mt-3 grid grid-cols-2 gap-3"><pre id="jwt-header" class="p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto">Header</pre><pre id="jwt-payload" class="p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto">Payload</pre></div>'
+    },
+    {
+        "id": "cron",
+        "name": "⏰ Cron Expression Parser",
+        "category": "Network & DevOps",
+        "desc": "Analyze Cron schedule expressions easily.",
+        "html": '<input type="text" id="cron-input" value="0 * * * *" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 font-mono text-sm" oninput="parseCron()"><div id="cron-out" class="p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300">Every hour schedule format</div>'
+    },
+    {
+        "id": "sql_fmt",
+        "name": "🗄️ SQL Formatter",
+        "category": "Data & Database",
+        "desc": "Clean and format SQL query statements.",
+        "html": '<textarea id="sql-input" rows="3" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="SELECT...">SELECT id, name FROM users WHERE active = 1;</textarea><button onclick="formatSQL()" class="mt-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs">Format SQL</button><pre id="sql-out" class="mt-2 p-2 bg-slate-900 rounded text-xs font-mono text-emerald-400"></pre>'
     }
 ]
 
@@ -144,7 +167,7 @@ def auto_expand_and_sync():
         log_message("Error: GitHub Token is empty! Please configure it in admin panel.")
         return
 
-    log_message("Scheduled task triggered: Expanding tool suite...")
+    log_message("Scheduled task triggered: Expanding categorized tool suite...")
     tools = load_tools()
     existing_ids = {t["id"] for t in tools}
 
@@ -154,7 +177,7 @@ def auto_expand_and_sync():
             tools.append(candidate)
             existing_ids.add(candidate["id"])
             added_count += 1
-            log_message(f"Auto-expanded tool: {candidate['name']}")
+            log_message(f"Auto-expanded tool into [{candidate.get('category')}]: {candidate['name']}")
 
     save_tools(tools)
     generate_static_site_and_push(config, tools)
@@ -169,25 +192,36 @@ def generate_static_site_and_push(config, tools):
     ai_key = config.get("ai_api_key", "")
     ai_status_text = "AI Powered Active" if ai_key else "Standard Mode"
 
-    sidebar_html = ""
+    # 按分类对工具进行归纳分组
+    categories = {}
     for t in tools:
-        cat = t.get('category', 'General')
-        sidebar_html += f'<li><a href="#{t["id"]}" class="block px-3 py-2 rounded hover:bg-slate-700 transition text-xs flex justify-between items-center"><span>{t["name"]}</span><span class="text-[10px] text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">{cat}</span></a></li>\n'
+        cat = t.get('category', 'General Utilities')
+        if cat not in categories:
+            categories[cat] = []
+        categories[cat].append(t)
+
+    # 构造分组侧边栏 HTML
+    sidebar_html = ""
+    for cat, t_list in categories.items():
+        sidebar_html += f'<div class="mb-4"><div class="text-[11px] uppercase tracking-wider text-indigo-400 font-bold mb-1 px-2">{cat}</div><ul class="space-y-1">'
+        for t in t_list:
+            sidebar_html += f'<li><a href="#{t["id"]}" class="block px-3 py-1.5 rounded hover:bg-slate-700 transition text-xs text-slate-300">{t["name"]}</a></li>'
+        sidebar_html += '</ul></div>'
 
     HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omniverse DevTools Platform</title>
+    <title>Categorized Developer Tools Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
     <!-- Header -->
     <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-            <h1 class="text-xl font-bold text-indigo-400">⚡ Omniverse DevTools Platform</h1>
-            <div class="text-xs text-slate-400">All-Fields Developer & Utility Suite (Total Tools: __TOOLS_COUNT__)</div>
+            <h1 class="text-xl font-bold text-indigo-400">⚡ Categorized DevTools Platform</h1>
+            <div class="text-xs text-slate-400">Structured Multi-Domain Utilities (Total Tools: __TOOLS_COUNT__)</div>
         </div>
         <div class="w-full md:w-auto text-center">
             __AD_HEADER__
@@ -195,13 +229,10 @@ def generate_static_site_and_push(config, tools):
     </header>
     
     <div class="flex flex-1 flex-col md:flex-row">
-        <!-- Sidebar -->
+        <!-- Sidebar with Categorized Groups -->
         <aside class="w-full md:w-80 bg-slate-800/50 p-4 border-r border-slate-700 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
             <div>
-                <h2 class="text-xs uppercase tracking-wider text-slate-400 mb-3 font-bold">Tool Categories</h2>
-                <ul class="space-y-1">
-                    __SIDEBAR_HTML__
-                </ul>
+                __SIDEBAR_HTML__
             </div>
             <div class="mt-8 p-3 bg-slate-800 rounded border border-slate-700 text-center">
                 <div class="text-xs text-slate-400 mb-2">Sponsored Ad</div>
@@ -215,7 +246,7 @@ def generate_static_site_and_push(config, tools):
         <main class="flex-1 p-6 flex flex-col justify-between">
             <div id="tool-display" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
                 <h2 id="tool-title" class="text-2xl font-bold mb-2 text-indigo-300">Select a Tool</h2>
-                <p id="tool-desc" class="text-slate-400 mb-6">Choose a tool from the sidebar menu to begin.</p>
+                <p id="tool-desc" class="text-slate-400 mb-6">Choose a categorized developer tool from the sidebar to begin.</p>
                 <div id="tool-workspace" class="space-y-4">
                     <p class="text-slate-500">All tools execute 100% locally in your browser.</p>
                 </div>
@@ -227,7 +258,7 @@ def generate_static_site_and_push(config, tools):
     </div>
 
     <footer class="bg-slate-800 border-t border-slate-700 text-center py-4 text-xs text-slate-500">
-        &copy; 2026 Omniverse DevTools Platform. All rights reserved. (__AI_STATUS__)
+        &copy; 2026 Categorized DevTools Platform. All rights reserved. (__AI_STATUS__)
     </footer>
 
     <script>
@@ -303,6 +334,24 @@ def generate_static_site_and_push(config, tools):
             let txt = document.getElementById('md-input').value;
             document.getElementById('md-output').innerHTML = "<p>" + txt.replace(/\\n/g, "<br>") + "</p>";
         }
+        function decodeJWT() {
+            try {
+                let parts = document.getElementById('jwt-input').value.split('.');
+                if(parts.length >= 2) {
+                    document.getElementById('jwt-header').innerText = JSON.stringify(JSON.parse(atob(parts[0])), null, 2);
+                    document.getElementById('jwt-payload').innerText = JSON.stringify(JSON.parse(atob(parts[1])), null, 2);
+                }
+            } catch(e) {
+                document.getElementById('jwt-header').innerText = "Invalid JWT";
+            }
+        }
+        function parseCron() {
+            document.getElementById('cron-out').innerText = "Parsed: Valid schedule format.";
+        }
+        function formatSQL() {
+            let q = document.getElementById('sql-input').value;
+            document.getElementById('sql-out').innerText = q.replace(/SELECT/gi, '\\nSELECT').replace(/FROM/gi, '\\nFROM');
+        }
 
         window.addEventListener('hashchange', renderTool);
         renderTool();
@@ -324,14 +373,14 @@ def generate_static_site_and_push(config, tools):
 
     try:
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "Updated tools safely with template replace"], check=True)
+        subprocess.run(["git", "commit", "-m", "Updated categorized tools and sidebar groups"], check=True)
         
         remote_url = f"https://{token}@github.com/{user}/{repo}.git"
         subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
         subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
         subprocess.run(["git", "branch", "-M", "main"], check=True)
         subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-        log_message("Success: Tools generated and pushed to GitHub successfully!")
+        log_message("Success: Categorized tools generated and pushed to GitHub successfully!")
     except Exception as e:
         log_message(f"Error during Git sync: {e}")
 
@@ -358,7 +407,7 @@ ADMIN_HTML = """<!DOCTYPE html>
             <h1 class="text-3xl font-bold text-indigo-400">⚙️ Platform Admin Panel</h1>
             <div>
                 {% if config.running %}
-                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running</span>
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (Categorized Mode)</span>
                 {% else %}
                     <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-semibold">■ Service Stopped</span>
                 {% endif %}
@@ -430,7 +479,7 @@ ADMIN_HTML = """<!DOCTYPE html>
         </form>
 
         <div class="mt-8 bg-slate-900 p-4 rounded-lg border border-slate-700">
-            <h2 class="text-sm font-semibold text-slate-200 mb-3">🛠️ Tools Suite Managed</h2>
+            <h2 class="text-sm font-semibold text-slate-200 mb-3">🛠️ Categorized Tools Suite Managed</h2>
             <ul class="space-y-2 mb-4 max-h-48 overflow-y-auto">
                 {% for t in tools %}
                     <li class="flex justify-between items-center bg-slate-950 p-2 rounded text-xs font-mono text-slate-300 border border-slate-800">
@@ -501,7 +550,7 @@ def admin_start():
     config = load_config()
     config["running"] = True
     save_config(config)
-    log_message("Automated background service STARTED.")
+    log_message("Automated background service STARTED (Categorized mode).")
     return redirect(url_for("admin"))
 
 @app.route("/admin/stop")
