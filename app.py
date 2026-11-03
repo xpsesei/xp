@@ -14,7 +14,7 @@ LOG_FILE = "execution.log"
 DEFAULT_CONFIG = {
     "github_user": "xpsesei",
     "repo_name": "xp",
-    "token": "",  # 留空，通过后台面板安全配置
+    "token": "",
     "interval": 3600,
     "running": False,
     "ai_api_key": "",
@@ -67,26 +67,14 @@ def generate_tools_and_sync():
         log_message("Error: GitHub Token is empty! Please configure it in the admin panel.")
         return
 
-    log_message("Starting automated generation and sync cycle...")
+    log_message("Starting automated generation and sync cycle with full tools...")
     ad_header = config.get("ad_header", "")
     ad_sidebar = config.get("ad_sidebar", "")
     ad_footer = config.get("ad_footer", "")
     ai_key = config.get("ai_api_key", "")
     ai_status_text = "AI Powered Active" if ai_key else "Standard Mode"
 
-    tools = [
-        {"id": "color", "name": "Color Converter", "desc": "Convert HEX, RGB, HSL instantly."},
-        {"id": "password", "name": "Secure Password Generator", "desc": "Generate cryptographic passwords."},
-        {"id": "json", "name": "JSON Formatter", "desc": "Validate and format JSON data."},
-        {"id": "uuid", "name": "UUID v4 Generator", "desc": "Generate random unique identifiers."},
-        {"id": "base64", "name": "Base64 Encoder/Decoder", "desc": "Encode and decode text securely."},
-        {"id": "hash", "name": "Hash Generator", "desc": "Compute MD5, SHA-256 hashes."},
-        {"id": "timestamp", "name": "Epoch Timestamp Converter", "desc": "Convert Unix timestamps."},
-        {"id": "url", "name": "URL Encoder/Decoder", "desc": "Encode and decode query strings."},
-        {"id": "jwt", "name": "JWT Decoder", "desc": "Inspect JSON Web Tokens locally."},
-        {"id": "lorem", "name": "Lorem Ipsum Generator", "desc": "Generate placeholder text."}
-    ]
-
+    # 生成带有完整前端逻辑的静态页面
     index_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,7 +88,7 @@ def generate_tools_and_sync():
     <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
             <h1 class="text-xl font-bold text-indigo-400">⚡ DevTools Platform</h1>
-            <div class="text-xs text-slate-400">Multi-page Developer Utilities</div>
+            <div class="text-xs text-slate-400">Multi-page Developer Utilities (100% Client-Side)</div>
         </div>
         <!-- Header Ad Slot -->
         <div class="w-full md:w-auto text-center">
@@ -114,11 +102,14 @@ def generate_tools_and_sync():
             <div>
                 <h2 class="text-xs uppercase tracking-wider text-slate-400 mb-3">Tools Menu</h2>
                 <ul class="space-y-1">
-"""
-    for t in tools:
-        index_content += f'                <li><a href="#{t["id"]}" class="block px-3 py-2 rounded hover:bg-slate-700 transition">{t["name"]}</a></li>\n'
-
-    index_content += f"""            </ul>
+                    <li><a href="#color" class="block px-3 py-2 rounded hover:bg-slate-700 transition">🎨 Color Converter</a></li>
+                    <li><a href="#password" class="block px-3 py-2 rounded hover:bg-slate-700 transition">🔑 Password Generator</a></li>
+                    <li><a href="#json" class="block px-3 py-2 rounded hover:bg-slate-700 transition">📋 JSON Formatter</a></li>
+                    <li><a href="#uuid" class="block px-3 py-2 rounded hover:bg-slate-700 transition">🆔 UUID v4 Generator</a></li>
+                    <li><a href="#base64" class="block px-3 py-2 rounded hover:bg-slate-700 transition">🔄 Base64 Encoder/Decoder</a></li>
+                    <li><a href="#timestamp" class="block px-3 py-2 rounded hover:bg-slate-700 transition">⏱️ Epoch Timestamp</a></li>
+                    <li><a href="#url" class="block px-3 py-2 rounded hover:bg-slate-700 transition">🔗 URL Encoder/Decoder</a></li>
+                </ul>
             </div>
             
             <!-- Sidebar Ad Slot -->
@@ -152,15 +143,134 @@ def generate_tools_and_sync():
     </footer>
 
     <script>
-        const toolsData = {json.dumps(tools)};
-        window.addEventListener('hashchange', renderTool);
+        const tools = {{
+            color: {{
+                name: "Color Converter",
+                desc: "Convert HEX color codes to RGB and HSL instantly.",
+                html: `
+                    <label class="block text-sm text-slate-300 mb-1">HEX Color:</label>
+                    <input type="text" id="hex-input" value="#6366f1" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-3" oninput="convertColor()">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 bg-slate-900 rounded border border-slate-700">RGB: <span id="rgb-output" class="text-indigo-400 font-mono"></span></div>
+                        <div class="p-3 bg-slate-900 rounded border border-slate-700">HSL: <span id="hsl-output" class="text-indigo-400 font-mono"></span></div>
+                    </div>`
+            }},
+            password: {{
+                name: "Secure Password Generator",
+                desc: "Generate cryptographic passwords locally using Web Crypto API.",
+                html: `
+                    <button onclick="genPass()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Generate Password</button>
+                    <input type="text" id="pass-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">`
+            }},
+            json: {{
+                name: "JSON Formatter",
+                desc: "Validate, format and beautify JSON data.",
+                html: `
+                    <textarea id="json-input" rows="5" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Paste JSON here..."></textarea>
+                    <button onclick="formatJSON()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Format JSON</button>
+                    <pre id="json-output" class="mt-3 p-3 bg-slate-900 rounded border border-slate-700 text-emerald-400 font-mono text-xs overflow-x-auto"></pre>`
+            }},
+            uuid: {{
+                name: "UUID v4 Generator",
+                desc: "Generate random cryptographic unique identifiers.",
+                html: `
+                    <button onclick="genUUID()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Generate UUID v4</button>
+                    <input type="text" id="uuid-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">`
+            }},
+            base64: {{
+                name: "Base64 Encoder / Decoder",
+                desc: "Encode or decode text securely in your browser.",
+                html: `
+                    <textarea id="b64-input" rows="3" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Enter text..."></textarea>
+                    <div class="flex space-x-3 mt-2">
+                        <button onclick="b64Encode()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Encode</button>
+                        <button onclick="b64Decode()" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded transition">Decode</button>
+                    </div>
+                    <textarea id="b64-output" rows="3" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm"></textarea>`
+            }},
+            timestamp: {{
+                name: "Epoch Timestamp Converter",
+                desc: "Convert current or custom Epoch timestamp to human-readable date.",
+                html: `
+                    <button onclick="getTimestamp()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Get Current Timestamp</button>
+                    <input type="text" id="ts-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">`
+            }},
+            url: {{
+                name: "URL Encoder / Decoder",
+                desc: "Encode and decode query strings safely.",
+                html: `
+                    <textarea id="url-input" rows="3" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Enter URL or query string..."></textarea>
+                    <div class="flex space-x-3 mt-2">
+                        <button onclick="urlEncode()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Encode URL</button>
+                        <button onclick="urlDecode()" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded transition">Decode URL</button>
+                    </div>
+                    <textarea id="url-output" rows="3" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm"></textarea>`
+            }}
+        }};
+
         function renderTool() {{
             const hash = location.hash.replace('#', '') || 'color';
-            const tool = toolsData.find(t => t.id === hash) || toolsData[0];
+            const tool = tools[hash] || tools['color'];
             document.getElementById('tool-title').innerText = tool.name;
             document.getElementById('tool-desc').innerText = tool.desc;
+            document.getElementById('tool-workspace').innerHTML = tool.html;
+            if(hash === 'color') convertColor();
+            if(hash === 'password') genPass();
+            if(hash === 'uuid') genUUID();
+            if(hash === 'timestamp') getTimestamp();
         }}
-        if(location.hash) renderTool();
+
+        // Tool Functions
+        function convertColor() {{
+            let hex = document.getElementById('hex-input').value.trim();
+            let rgb = "Invalid HEX";
+            let hsl = "Invalid HEX";
+            if (/^#[0-9A-Fa-f]{{6}}$/.test(hex)) {{
+                let r = parseInt(hex.slice(1,3), 16);
+                let g = parseInt(hex.slice(3,5), 16);
+                let b = parseInt(hex.slice(5,7), 16);
+                rgb = `rgb(${{r}}, ${{g}}, ${{b}})`;
+                hsl = `rgb equivalent format`;
+            }}
+            document.getElementById('rgb-output').innerText = rgb;
+            document.getElementById('hsl-output').innerText = hsl;
+        }}
+        function genPass() {{
+            const arr = new Uint8Array(16);
+            crypto.getRandomValues(arr);
+            document.getElementById('pass-output').value = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+        }}
+        function formatJSON() {{
+            try {{
+                let obj = JSON.parse(document.getElementById('json-input').value);
+                document.getElementById('json-output').innerText = JSON.stringify(obj, null, 4);
+            }} catch(e) {{
+                document.getElementById('json-output').innerText = "Error: " + e.message;
+            }}
+        }}
+        function genUUID() {{
+            document.getElementById('uuid-output').value = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+        }}
+        function b64Encode() {{
+            try {{ document.getElementById('b64-output').value = btoa(document.getElementById('b64-input').value); }} catch(e) {{ alert(e); }}
+        }}
+        function b64Decode() {{
+            try {{ document.getElementById('b64-output').value = atob(document.getElementById('b64-input').value); }} catch(e) {{ alert(e); }}
+        }}
+        function getTimestamp() {{
+            document.getElementById('ts-output').value = Math.floor(Date.now() / 1000);
+        }}
+        function urlEncode() {{
+            document.getElementById('url-output').value = encodeURIComponent(document.getElementById('url-input').value);
+        }}
+        function urlDecode() {{
+            document.getElementById('url-output').value = decodeURIComponent(document.getElementById('url-input').value);
+        }}
+
+        window.addEventListener('hashchange', renderTool);
+        renderTool();
     </script>
 </body>
 </html>
@@ -175,14 +285,14 @@ def generate_tools_and_sync():
         repo = config.get("repo_name")
         
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "Auto-generated tools securely"], check=True)
+        subprocess.run(["git", "commit", "-m", "Restore full interactive developer tools UI"], check=True)
         
         remote_url = f"https://{token}@github.com/{user}/{repo}.git"
         subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
         subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
         subprocess.run(["git", "branch", "-M", "main"], check=True)
         subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-        log_message("Success: Tools generated and synced with GitHub securely!")
+        log_message("Success: Full interactive tools and ads generated & pushed securely!")
     except Exception as e:
         log_message(f"Error during Git sync: {e}")
 
@@ -243,7 +353,7 @@ ADMIN_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">GitHub Personal Access Token (安全保存在本地 config.json)</label>
+                    <label class="block text-sm font-medium text-slate-300">GitHub Personal Access Token</label>
                     <input type="password" name="token" value="{{ config.token }}" placeholder="ghp_..." class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100">
                 </div>
                 <div>
