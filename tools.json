@@ -46,5 +46,95 @@
         "name": "\ud83d\udd0d Regex Tester",
         "desc": "Test regular expressions against sample text in real-time.",
         "html": "<div class=\"space-y-3\"><div><label class=\"text-xs text-slate-400\">Regular Expression:</label><input type=\"text\" id=\"regex-pattern\" value=\"\\w+\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" oninput=\"testRegex()\"></div><div><label class=\"text-xs text-slate-400\">Test String:</label><textarea id=\"regex-text\" rows=\"3\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" oninput=\"testRegex()\">Hello DevTools 2026!</textarea></div><div><label class=\"text-xs text-slate-400\">Match Results:</label><pre id=\"regex-result\" class=\"p-3 bg-slate-900 rounded border border-slate-700 text-emerald-400 font-mono text-xs\"></pre></div></div>"
+    },
+    {
+        "id": "jwt",
+        "name": "\ud83d\udee1\ufe0f JWT Inspector",
+        "desc": "Decode JSON Web Token header and payload locally.",
+        "html": "<textarea id=\"jwt-input\" rows=\"3\" placeholder=\"Paste JWT token...\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" oninput=\"decodeJWT()\"></textarea><div class=\"mt-3 grid grid-cols-2 gap-3\"><pre id=\"jwt-header\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto\">Header</pre><pre id=\"jwt-payload\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto\">Payload</pre></div>"
+    },
+    {
+        "id": "markdown",
+        "name": "\ud83d\udcdd Markdown Previewer",
+        "desc": "Write Markdown and preview live formatting.",
+        "html": "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><textarea id=\"md-input\" rows=\"4\" class=\"p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" oninput=\"renderMD()\"># Hello\\nMarkdown preview</textarea><div id=\"md-output\" class=\"p-3 bg-slate-900 rounded border border-slate-700 text-slate-200 text-sm\"></div></div>"
+    },
+    {
+        "id": "url",
+        "name": "\ud83d\udd17 URL Encoder / Decoder",
+        "desc": "Safely encode and decode URL query strings.",
+        "html": "<textarea id=\"url-input\" rows=\"2\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" placeholder=\"Enter URL...\"></textarea><div class=\"flex space-x-3 mt-2\"><button onclick=\"urlEncode()\" class=\"bg-indigo-600 text-white px-3 py-1 rounded text-xs\">Encode</button><button onclick=\"urlDecode()\" class=\"bg-slate-700 text-white px-3 py-1 rounded text-xs\">Decode</button></div><textarea id=\"url-output\" rows=\"2\" readonly class=\"w-full mt-2 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm\"></textarea>"
+    },
+    {
+        "id": "html_entity",
+        "name": "\ud83c\udf10 HTML Entity Escaper",
+        "desc": "Escape or unescape HTML characters securely.",
+        "html": "<textarea id=\"html-input\" rows=\"2\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" placeholder=\"Enter HTML...\"></textarea><button onclick=\"escapeHTML()\" class=\"mt-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs\">Escape</button><textarea id=\"html-output\" rows=\"2\" readonly class=\"w-full mt-2 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm\"></textarea>"
+    },
+    {
+        "id": "case_conv",
+        "name": "\ud83d\udd24 Case Converter",
+        "desc": "Convert text between camelCase, snake_case, kebab-case.",
+        "html": "<input type=\"text\" id=\"case-input\" value=\"hello world devtools\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 text-sm\" oninput=\"convertCase()\"><div id=\"case-output\" class=\"space-y-1 font-mono text-xs text-indigo-300 p-2 bg-slate-900 rounded\"></div>"
+    },
+    {
+        "id": "lorem",
+        "name": "\ud83d\udcc4 Lorem Ipsum Generator",
+        "desc": "Generate placeholder text for layouts.",
+        "html": "<button onclick=\"genLorem()\" class=\"bg-indigo-600 text-white px-3 py-1 rounded text-xs mb-2\">Generate Paragraph</button><textarea id=\"lorem-output\" rows=\"3\" readonly class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-300 font-mono text-xs\"></textarea>"
+    },
+    {
+        "id": "diff",
+        "name": "\u2696\ufe0f Text Diff Checker",
+        "desc": "Compare two strings or code snippets for differences.",
+        "html": "<div class=\"grid grid-cols-2 gap-2\"><textarea id=\"diff-a\" rows=\"3\" placeholder=\"Original\" class=\"p-2 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100\" oninput=\"checkDiff()\"></textarea><textarea id=\"diff-b\" rows=\"3\" placeholder=\"Modified\" class=\"p-2 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100\" oninput=\"checkDiff()\"></textarea></div><div id=\"diff-out\" class=\"mt-2 p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\"></div>"
+    },
+    {
+        "id": "ascii",
+        "name": "\ud83c\udfa8 ASCII Text Art",
+        "desc": "Convert plain text into banner art headers.",
+        "html": "<input type=\"text\" id=\"ascii-input\" value=\"DEV\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 text-sm\" oninput=\"genAscii()\"><pre id=\"ascii-out\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-emerald-400\"></pre>"
+    },
+    {
+        "id": "bytes",
+        "name": "\ud83d\udcbe Data Storage Converter",
+        "desc": "Convert between Bytes, KB, MB, GB, TB.",
+        "html": "<input type=\"number\" id=\"byte-input\" value=\"1024\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 text-sm\" oninput=\"convertBytes()\"><div id=\"byte-out\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\"></div>"
+    },
+    {
+        "id": "cron",
+        "name": "\u23f0 Cron Expression Parser",
+        "desc": "Analyze Cron schedule expressions easily.",
+        "html": "<input type=\"text\" id=\"cron-input\" value=\"0 * * * *\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 font-mono text-sm\" oninput=\"parseCron()\"><div id=\"cron-out\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\">Every hour schedule format</div>"
+    },
+    {
+        "id": "rsa",
+        "name": "\ud83d\udd10 RSA Key Pair Simulator",
+        "desc": "Simulate secure key generation parameters.",
+        "html": "<button onclick=\"genRSA()\" class=\"bg-indigo-600 text-white px-3 py-1 rounded text-xs mb-2\">Simulate Key Pair</button><textarea id=\"rsa-out\" rows=\"3\" readonly class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-xs\"></textarea>"
+    },
+    {
+        "id": "number_base",
+        "name": "\ud83d\udd22 Number Base Converter",
+        "desc": "Convert decimal numbers to Hex, Binary, and Octal.",
+        "html": "<input type=\"number\" id=\"num-input\" value=\"255\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 text-sm\" oninput=\"convertBase()\"><div id=\"num-out\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\"></div>"
+    },
+    {
+        "id": "pass_strength",
+        "name": "\ud83d\udd12 Password Strength Meter",
+        "desc": "Analyze entropy and security strength of passwords.",
+        "html": "<input type=\"password\" id=\"str-input\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 text-sm\" oninput=\"checkStrength()\"><div id=\"str-out\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\">Enter password to test</div>"
+    },
+    {
+        "id": "unicode",
+        "name": "\ud83d\udd23 Unicode Escape Tool",
+        "desc": "Encode strings to Unicode escape sequences.",
+        "html": "<input type=\"text\" id=\"uni-input\" value=\"Hello\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 text-sm\" oninput=\"convertUni()\"><input type=\"text\" id=\"uni-out\" readonly class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm\">"
+    },
+    {
+        "id": "sql_fmt",
+        "name": "\ud83d\uddc4\ufe0f SQL Formatter",
+        "desc": "Clean and format SQL query statements.",
+        "html": "<textarea id=\"sql-input\" rows=\"3\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" placeholder=\"SELECT * FROM users...\">SELECT id, name FROM users WHERE active = 1;</textarea><button onclick=\"formatSQL()\" class=\"mt-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs\">Format SQL</button><pre id=\"sql-out\" class=\"mt-2 p-2 bg-slate-900 rounded text-xs font-mono text-emerald-400\"></pre>"
     }
 ]
