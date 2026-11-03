@@ -931,11 +931,9 @@ Here's a complete single-file HTML app for a free online developer tools suite, 
   var themeBtn = $('#themeBtn');
   function applyTheme(t) {
     root.setAttribute('data-theme', t);
-    try { localStorage.setItem('dt-theme', t); } catch (err) {}
     themeBtn.textContent = t === 'light' ? '☀️' : '🌙';
   }
   var storedTheme = 'dark';
-  try { storedTheme = localStorage.getItem('dt-theme') || 'dark'; } catch (err) {}
   applyTheme(storedTheme);
   themeBtn.addEventListener('click', function () {
     applyTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
@@ -1662,15 +1660,7 @@ Here's a complete single-file HTML app for a free online developer tools suite, 
 </body>
 </html>
 ```
-### Tools, Interactions & Design
 
-Here's how each tool works and how you can move around the app.
 
-- **Instant results**: Most tools update as you type — JSON formatting debounces after 450ms, hash values compute automatically, and the color converter reacts to every keystroke.
-- **One-click actions**: Copy buttons on every output, a sample JSON button, and dedicated Generate buttons for UUIDs, passwords, and lorem ipsum.
-- **Navigation & search**: The sidebar lists all 14 tools and includes a live search filter; clicking a tool switches the main panel and updates the URL hash.
-- **Theme & mobile support**: A top-right button toggles light/dark themes, and on smaller screens the sidebar becomes a slide-out drawer.
-- **Local processing**: All calculations run in your browser using the Web Crypto API, so no data is sent anywhere.
 ---
 
-**Optimization Tip:** You can replace the placeholder ad slot near the end of the file with your actual ad network snippet. The theme preference is stored under the localStorage key `dt-theme` — adjust that if needed.
