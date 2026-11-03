@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
     "custom_domain": "",
     "interval": 3600,
     "running": False,
-    "ai_api_keys": "",  # 新增：支持多行输入多个 AI 密钥
+    "ai_api_keys": "",
     "ad_header": "",
     "ad_sidebar": "",
     "ad_tool_content": "",
@@ -157,36 +157,6 @@ def log_message(msg):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(formatted)
 
-# 核心：带有多密钥自动故障转移（Failover）的 AI 调用封装函数
-def call_ai_with_failover(prompt_text):
-    config = load_config()
-    keys_raw = config.get("ai_api_keys", "")
-    keys = [k.strip() for k in keys_raw.split("\n") if k.strip()]
-    
-    if not keys:
-        log_message("Warning: No AI API keys configured.")
-        return None
-
-    for idx, key in enumerate(keys):
-        try:
-            log_message(f"Attempting AI request using Key #{idx + 1}...")
-            # 示例：此处预留标准的 API 调用逻辑（如调用 OpenAI / Gemini 接口）
-            # headers = {"Authorization": f"Bearer {key}"}
-            # response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json={...}, timeout=15)
-            # if response.status_code == 200:
-            #     return response.json()
-            # else:
-            #     log_message(f"Key #{idx + 1} failed with status {response.status_code}, switching to next key...")
-            
-            # 模拟测试成功
-            return "AI Response Success"
-        except Exception as e:
-            log_message(f"Key #{idx + 1} encountered error: {e}. Trying next available key...")
-            continue
-            
-    log_message("Error: All configured AI API keys failed or exhausted.")
-    return None
-
 def auto_expand_and_sync():
     config = load_config()
     if not config.get("running", False):
@@ -227,9 +197,24 @@ def generate_static_site_and_push(config, tools):
     if custom_domain:
         with open("CNAME", "w", encoding="utf-8") as f:
             f.write(custom_domain)
+        log_message(f"Custom domain CNAME generated: {custom_domain}")
+        
+        domain_redirect_script = """
+    <script>
+        const allowedDomain = "__CUSTOM_DOMAIN__";
+        if (allowedDomain && 
+            window.location.hostname !== allowedDomain && 
+            !window.location.hostname.includes('localhost') && 
+            !window.location.hostname.includes('127.0.0.1') &&
+            window.location.port !== '5050') {
+            window.location.href = 'https://' + allowedDomain + window.location.pathname + window.location.search + window.location.hash;
+        }
+    </script>
+        """.replace("__CUSTOM_DOMAIN__", custom_domain)
     else:
         if os.path.exists("CNAME"):
             os.remove("CNAME")
+        domain_redirect_script = ""
 
     categories = {}
     for t in tools:
@@ -252,6 +237,7 @@ def generate_static_site_and_push(config, tools):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Categorized Developer Tools Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    __DOMAIN_REDIRECT_SCRIPT__
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
     <!-- Header -->
@@ -404,27 +390,28 @@ def generate_static_site_and_push(config, tools):
 """
 
     index_content = HTML_TEMPLATE.replace("__TOOLS_COUNT__", str(len(tools)))\
+                                 .replace("__DOMAIN_REDIRECT_SCRIPT__", domain_redirect_script)\
                                  .replace("__AD_HEADER__", ad_header)\
                                  .replace("__SIDEBAR_HTML__", sidebar_html)\
                                  .replace("__AD_SIDEBAR__", ad_sidebar)\
                                  .replace("__AD_FOOTER__", ad_footer)\
                                  .replace("__AD_TOOL_CONTENT__", ad_tool_content)\
-                                 .replace("__AI_STATUS__", ai_status_text)\
-                                 .replace("__TOOLS_JSON__", json.dumps(tools))
+                                 .replace("__TOOLS_JSON__", json.dumps(tools))\
+                                 .replace("__AI_STATUS__", ai_status_text)
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_content)
 
     try:
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "Updated with multi-key AI failover and ad sync"], check=True)
+        subprocess.run(["git", "commit", "-m", "Fixed syntax error and enforced domain"], check=True)
         
         remote_url = f"https://{token}@github.com/{user}/{repo}.git"
         subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
         subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
         subprocess.run(["git", "branch", "-M", "main"], check=True)
         subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-        log_message("Success: Static site pushed to GitHub with multi-key failover support!")
+        log_message("Success: Static site pushed to GitHub successfully!")
     except Exception as e:
         log_message(f"Error during Git sync: {e}")
 
@@ -488,7 +475,7 @@ ADMIN_HTML = """<!DOCTYPE html>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300">Custom Domain (自定义域名，例如 tools.yourdomain.com)</label>
-                    <input type="text" name="custom_domain" value="{{ config.custom_domain }}" placeholder="leave blank if not using custom domain" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                    <input type="text" name="custom_domain" value="{{ config.custom_domain }}" placeholder="tools.yourdomain.com" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300">Generation Interval (seconds)</label>
@@ -496,11 +483,10 @@ ADMIN_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- 多密钥配置区 -->
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">AI Model Multi-Keys Integration (多大模型 API 密钥 - 智能轮询与故障转移)</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">AI Model Multi-Keys Integration</h2>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key，失败时自动切换下一个)</label>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key)</label>
                     <textarea name="ai_api_keys" rows="3" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
                 </div>
             </div>

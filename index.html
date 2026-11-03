@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Categorized Developer Tools Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        const allowedDomain = "xp.135805.xyz";
+        if (allowedDomain && 
+            window.location.hostname !== allowedDomain && 
+            !window.location.hostname.includes('localhost') && 
+            !window.location.hostname.includes('127.0.0.1') &&
+            window.location.port !== '5050') {
+            window.location.href = 'https://' + allowedDomain + window.location.pathname + window.location.search + window.location.hash;
+        }
+    </script>
+        
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
     <!-- Header -->
