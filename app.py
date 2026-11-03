@@ -16,15 +16,16 @@ DEFAULT_CONFIG = {
     "github_user": "xpsesei",
     "repo_name": "xp",
     "token": "",
+    "custom_domain": "",
     "interval": 3600,
     "running": False,
     "ai_api_key": "",
     "ad_header": "",
     "ad_sidebar": "",
+    "ad_tool_content": "",
     "ad_footer": ""
 }
 
-# 基础默认核心工具库（带明确分类）
 DEFAULT_TOOLS = [
     {
         "id": "color",
@@ -49,7 +50,6 @@ DEFAULT_TOOLS = [
     }
 ]
 
-# 自动扩展扩展池（涵盖全品类各个领域）
 AUTO_EXPANSION_QUEUE = [
     {
         "id": "uuid",
@@ -167,7 +167,7 @@ def auto_expand_and_sync():
         log_message("Error: GitHub Token is empty! Please configure it in admin panel.")
         return
 
-    log_message("Scheduled task triggered: Expanding categorized tool suite...")
+    log_message("Scheduled task triggered: Expanding tool suite...")
     tools = load_tools()
     existing_ids = {t["id"] for t in tools}
 
@@ -186,13 +186,22 @@ def generate_static_site_and_push(config, tools):
     token = config.get("token", "").strip()
     user = config.get("github_user")
     repo = config.get("repo_name")
+    custom_domain = config.get("custom_domain", "").strip()
     ad_header = config.get("ad_header", "")
     ad_sidebar = config.get("ad_sidebar", "")
     ad_footer = config.get("ad_footer", "")
+    ad_tool_content = config.get("ad_tool_content", "")
     ai_key = config.get("ai_api_key", "")
     ai_status_text = "AI Powered Active" if ai_key else "Standard Mode"
 
-    # 按分类对工具进行归纳分组
+    # 处理自定义域名 CNAME
+    if custom_domain:
+        with open("CNAME", "w", encoding="utf-8") as f:
+            f.write(custom_domain)
+    else:
+        if os.path.exists("CNAME"):
+            os.remove("CNAME")
+
     categories = {}
     for t in tools:
         cat = t.get('category', 'General Utilities')
@@ -200,7 +209,6 @@ def generate_static_site_and_push(config, tools):
             categories[cat] = []
         categories[cat].append(t)
 
-    # 构造分组侧边栏 HTML
     sidebar_html = ""
     for cat, t_list in categories.items():
         sidebar_html += f'<div class="mb-4"><div class="text-[11px] uppercase tracking-wider text-indigo-400 font-bold mb-1 px-2">{cat}</div><ul class="space-y-1">'
@@ -229,7 +237,7 @@ def generate_static_site_and_push(config, tools):
     </header>
     
     <div class="flex flex-1 flex-col md:flex-row">
-        <!-- Sidebar with Categorized Groups -->
+        <!-- Sidebar -->
         <aside class="w-full md:w-80 bg-slate-800/50 p-4 border-r border-slate-700 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
             <div>
                 __SIDEBAR_HTML__
@@ -244,11 +252,17 @@ def generate_static_site_and_push(config, tools):
 
         <!-- Main Content Panel -->
         <main class="flex-1 p-6 flex flex-col justify-between">
-            <div id="tool-display" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-                <h2 id="tool-title" class="text-2xl font-bold mb-2 text-indigo-300">Select a Tool</h2>
-                <p id="tool-desc" class="text-slate-400 mb-6">Choose a categorized developer tool from the sidebar to begin.</p>
-                <div id="tool-workspace" class="space-y-4">
-                    <p class="text-slate-500">All tools execute 100% locally in your browser.</p>
+            <div id="tool-display" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg flex flex-col justify-between">
+                <div>
+                    <h2 id="tool-title" class="text-2xl font-bold mb-2 text-indigo-300">Select a Tool</h2>
+                    <p id="tool-desc" class="text-slate-400 mb-6">Choose a categorized developer tool from the sidebar to begin.</p>
+                    <div id="tool-workspace" class="space-y-4">
+                        <p class="text-slate-500">All tools execute 100% locally in your browser.</p>
+                    </div>
+                </div>
+                <!-- Tool Workspace Ad Slot (固定独立容器，绝不被覆盖) -->
+                <div id="tool-ad-slot" class="mt-8 pt-4 border-t border-slate-700 text-center">
+                    __AD_TOOL_CONTENT__
                 </div>
             </div>
             <div class="mt-6 p-4 bg-slate-800/60 rounded-xl border border-slate-700 text-center">
@@ -365,6 +379,7 @@ def generate_static_site_and_push(config, tools):
                                  .replace("__SIDEBAR_HTML__", sidebar_html)\
                                  .replace("__AD_SIDEBAR__", ad_sidebar)\
                                  .replace("__AD_FOOTER__", ad_footer)\
+                                 .replace("__AD_TOOL_CONTENT__", ad_tool_content)\
                                  .replace("__AI_STATUS__", ai_status_text)\
                                  .replace("__TOOLS_JSON__", json.dumps(tools))
 
@@ -373,14 +388,14 @@ def generate_static_site_and_push(config, tools):
 
     try:
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "Updated categorized tools and sidebar groups"], check=True)
+        subprocess.run(["git", "commit", "-m", "Fixed ad sync and tool workspace inner ad slot"], check=True)
         
         remote_url = f"https://{token}@github.com/{user}/{repo}.git"
         subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
         subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
         subprocess.run(["git", "branch", "-M", "main"], check=True)
         subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-        log_message("Success: Categorized tools generated and pushed to GitHub successfully!")
+        log_message("Success: Ad updates synchronized and pushed to GitHub successfully!")
     except Exception as e:
         log_message(f"Error during Git sync: {e}")
 
@@ -407,7 +422,7 @@ ADMIN_HTML = """<!DOCTYPE html>
             <h1 class="text-3xl font-bold text-indigo-400">⚙️ Platform Admin Panel</h1>
             <div>
                 {% if config.running %}
-                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (Categorized Mode)</span>
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running</span>
                 {% else %}
                     <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-semibold">■ Service Stopped</span>
                 {% endif %}
@@ -427,7 +442,7 @@ ADMIN_HTML = """<!DOCTYPE html>
 
         <form action="/admin/save" method="POST" class="space-y-6">
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">GitHub & Sync Settings</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">GitHub & Domain Settings</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-300">GitHub Username</label>
@@ -441,6 +456,10 @@ ADMIN_HTML = """<!DOCTYPE html>
                 <div>
                     <label class="block text-sm font-medium text-slate-300">GitHub Personal Access Token</label>
                     <input type="password" name="token" value="{{ config.token }}" placeholder="ghp_..." class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Custom Domain (自定义域名，例如 tools.yourdomain.com)</label>
+                    <input type="text" name="custom_domain" value="{{ config.custom_domain }}" placeholder="leave blank if not using custom domain" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300">Generation Interval (seconds)</label>
@@ -457,17 +476,21 @@ ADMIN_HTML = """<!DOCTYPE html>
             </div>
 
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">Multi-Ad Network Slots</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">Multi-Ad Network Slots (多广告位配置)</h2>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">1. Header Ad Code</label>
+                    <label class="block text-sm font-medium text-slate-300">1. Header Ad Code (顶部横幅广告)</label>
                     <textarea name="ad_header" rows="2" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs">{{ config.ad_header }}</textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">2. Sidebar Ad Code</label>
+                    <label class="block text-sm font-medium text-slate-300">2. Sidebar Ad Code (侧边栏广告)</label>
                     <textarea name="ad_sidebar" rows="2" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs">{{ config.ad_sidebar }}</textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">3. Footer Ad Code</label>
+                    <label class="block text-sm font-medium text-slate-300">3. Tool Workspace Inner Ad Code (工具内容下方独立广告位)</label>
+                    <textarea name="ad_tool_content" rows="2" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs">{{ config.ad_tool_content }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">4. Footer Ad Code (底部通栏广告)</label>
                     <textarea name="ad_footer" rows="2" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-xs">{{ config.ad_footer }}</textarea>
                 </div>
             </div>
@@ -526,13 +549,17 @@ def admin_save():
     config["github_user"] = request.form.get("github_user", "xpsesei")
     config["repo_name"] = request.form.get("repo_name", "xp")
     config["token"] = request.form.get("token", "")
+    config["custom_domain"] = request.form.get("custom_domain", "").strip()
     config["interval"] = int(request.form.get("interval", 3600))
     config["ai_api_key"] = request.form.get("ai_api_key", "")
     config["ad_header"] = request.form.get("ad_header", "")
     config["ad_sidebar"] = request.form.get("ad_sidebar", "")
     config["ad_footer"] = request.form.get("ad_footer", "")
+    config["ad_tool_content"] = request.form.get("ad_tool_content", "")
     save_config(config)
-    log_message("Configuration saved successfully.")
+    log_message("Configuration saved. Re-generating static site and syncing...")
+    # 修改配置后立即重新生成并同步，确保删除广告时网站立刻更新
+    generate_static_site_and_push(config, load_tools())
     return redirect(url_for("admin"))
 
 @app.route("/admin/tool/delete")
@@ -550,7 +577,7 @@ def admin_start():
     config = load_config()
     config["running"] = True
     save_config(config)
-    log_message("Automated background service STARTED (Categorized mode).")
+    log_message("Automated background service STARTED.")
     return redirect(url_for("admin"))
 
 @app.route("/admin/stop")
