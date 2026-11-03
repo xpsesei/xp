@@ -402,16 +402,21 @@ def generate_static_site_and_push(config, tools):
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_content)
 
+    # 智能 Git 提交与推送（自动检查是否有变动，避免工作区干净时报错）
     try:
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "Fixed syntax error and enforced domain"], check=True)
+        status_res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         
-        remote_url = f"https://{token}@github.com/{user}/{repo}.git"
-        subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
-        subprocess.run(["git", "branch", "-M", "main"], check=True)
-        subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-        log_message("Success: Static site pushed to GitHub successfully!")
+        if status_res.stdout.strip():
+            subprocess.run(["git", "commit", "-m", "Automated sync platform updates and domain configuration"], check=True)
+            remote_url = f"https://{token}@github.com/{user}/{repo}.git"
+            subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
+            subprocess.run(["git", "branch", "-M", "main"], check=True)
+            subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
+            log_message("Success: Static site changes committed and pushed to GitHub!")
+        else:
+            log_message("Git sync: Working tree clean, no changes to commit.")
     except Exception as e:
         log_message(f"Error during Git sync: {e}")
 
