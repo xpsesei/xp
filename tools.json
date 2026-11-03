@@ -40,5 +40,11 @@
         "name": "#\ufe0f\u20e3 Hash Generator",
         "desc": "Compute MD5, SHA-1 and SHA-256 hashes locally in browser.",
         "html": "<input type=\"text\" id=\"hash-input\" placeholder=\"Enter text to hash...\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-3\" oninput=\"computeHash()\"><div class=\"space-y-2 font-mono text-xs text-indigo-300\"><div class=\"p-2 bg-slate-900 rounded\">MD5: <span id=\"md5-out\"></span></div><div class=\"p-2 bg-slate-900 rounded\">SHA-256: <span id=\"sha256-out\"></span></div></div>"
+    },
+    {
+        "id": "regex",
+        "name": "\ud83d\udd0d Regex Tester",
+        "desc": "Test regular expressions against sample text in real-time.",
+        "html": "<div class=\"space-y-3\"><div><label class=\"text-xs text-slate-400\">Regular Expression:</label><input type=\"text\" id=\"regex-pattern\" value=\"\\w+\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" oninput=\"testRegex()\"></div><div><label class=\"text-xs text-slate-400\">Test String:</label><textarea id=\"regex-text\" rows=\"3\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" oninput=\"testRegex()\">Hello DevTools 2026!</textarea></div><div><label class=\"text-xs text-slate-400\">Match Results:</label><pre id=\"regex-result\" class=\"p-3 bg-slate-900 rounded border border-slate-700 text-emerald-400 font-mono text-xs\"></pre></div></div>"
     }
 ]
