@@ -50,65 +50,6 @@ DEFAULT_TOOLS = [
     }
 ]
 
-AUTO_EXPANSION_QUEUE = [
-    {
-        "id": "uuid",
-        "name": "🆔 UUID v4 Generator",
-        "category": "Security & Cryptography",
-        "desc": "Generate random cryptographic unique identifiers.",
-        "html": '<button onclick="genUUID()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Generate UUID v4</button><input type="text" id="uuid-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">'
-    },
-    {
-        "id": "base64",
-        "name": "🔄 Base64 Encoder / Decoder",
-        "category": "Text & Formatting",
-        "desc": "Encode or decode text securely in your browser.",
-        "html": '<textarea id="b64-input" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Enter text..."></textarea><div class="flex space-x-3 mt-2"><button onclick="b64Encode()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Encode</button><button onclick="b64Decode()" class="bg-slate-700 text-white px-3 py-1 rounded text-xs">Decode</button></div><textarea id="b64-output" rows="2" readonly class="w-full mt-2 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm"></textarea>'
-    },
-    {
-        "id": "timestamp",
-        "name": "⏱️ Epoch Timestamp",
-        "category": "Math & Converters",
-        "desc": "Convert current or custom Epoch timestamp.",
-        "html": '<button onclick="getTimestamp()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs mb-2">Get Timestamp</button><input type="text" id="ts-output" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm">'
-    },
-    {
-        "id": "url",
-        "name": "🔗 URL Encoder / Decoder",
-        "category": "Network & DevOps",
-        "desc": "Safely encode and decode URL query strings.",
-        "html": '<textarea id="url-input" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Enter URL..."></textarea><div class="flex space-x-3 mt-2"><button onclick="urlEncode()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Encode</button><button onclick="urlDecode()" class="bg-slate-700 text-white px-3 py-1 rounded text-xs">Decode</button></div><textarea id="url-output" rows="2" readonly class="w-full mt-2 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm"></textarea>'
-    },
-    {
-        "id": "markdown",
-        "name": "📝 Markdown Previewer",
-        "category": "Text & Formatting",
-        "desc": "Write Markdown and preview live formatting.",
-        "html": '<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><textarea id="md-input" rows="4" class="p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" oninput="renderMD()"># Hello\\nMarkdown preview</textarea><div id="md-output" class="p-3 bg-slate-900 rounded border border-slate-700 text-slate-200 text-sm"></div></div>'
-    },
-    {
-        "id": "jwt",
-        "name": "🛡️ JWT Inspector",
-        "category": "Security & Cryptography",
-        "desc": "Decode JSON Web Token header and payload locally.",
-        "html": '<textarea id="jwt-input" rows="3" placeholder="Paste JWT token..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" oninput="decodeJWT()"></textarea><div class="mt-3 grid grid-cols-2 gap-3"><pre id="jwt-header" class="p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto">Header</pre><pre id="jwt-payload" class="p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto">Payload</pre></div>'
-    },
-    {
-        "id": "cron",
-        "name": "⏰ Cron Expression Parser",
-        "category": "Network & DevOps",
-        "desc": "Analyze Cron schedule expressions easily.",
-        "html": '<input type="text" id="cron-input" value="0 * * * *" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 font-mono text-sm" oninput="parseCron()"><div id="cron-out" class="p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300">Every hour schedule format</div>'
-    },
-    {
-        "id": "sql_fmt",
-        "name": "🗄️ SQL Formatter",
-        "category": "Data & Database",
-        "desc": "Clean and format SQL query statements.",
-        "html": '<textarea id="sql-input" rows="3" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="SELECT...">SELECT id, name FROM users WHERE active = 1;</textarea><button onclick="formatSQL()" class="mt-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs">Format SQL</button><pre id="sql-out" class="mt-2 p-2 bg-slate-900 rounded text-xs font-mono text-emerald-400"></pre>'
-    }
-]
-
 def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
@@ -157,6 +98,60 @@ def log_message(msg):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(formatted)
 
+# 核心：通过多密钥故障转移调用大模型实时生成新工具
+def generate_new_tool_via_ai(existing_ids):
+    config = load_config()
+    keys_raw = config.get("ai_api_keys", "")
+    keys = [k.strip() for k in keys_raw.split("\n") if k.strip()]
+    
+    if not keys:
+        log_message("AI Keys list is empty. Please configure AI API keys in admin panel to generate new tools.")
+        return None
+
+    prompt = """You are an expert full-stack developer. Create a brand new, highly useful browser-based developer utility tool (e.g., QR Code Generator, Base64 Image Encoder, JWT Decoder, Regex Tester, Hash Generator, etc.).
+Return ONLY a valid JSON object (no markdown wrapping) with these exact keys:
+{
+  "id": "unique_string_id",
+  "name": "Emoji & Tool Name",
+  "category": "Security & Cryptography" or "Network & DevOps" or "Data & Database" or "Text & Formatting" or "Math & Converters" or "Design & Media",
+  "desc": "Short description of what the tool does",
+  "html": "Tailwind CSS styled HTML form elements and interactive JavaScript logic with inline event handlers"
+}
+Make sure the ID is unique and not in this existing list: """ + str(list(existing_ids))
+
+    for idx, key in enumerate(keys):
+        try:
+            log_message(f"Attempting AI tool generation using Key #{idx + 1}...")
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.8
+            }
+            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=35)
+            if response.status_code == 200:
+                res_json = response.json()
+                content = res_json["choices"][0]["message"]["content"].strip()
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.endswith("```"):
+                    content = content[:-3]
+                tool_data = json.loads(content.strip())
+                if "id" in tool_data and "html" in tool_data:
+                    log_message(f"Successfully generated new tool via AI: {tool_data.get('name')}")
+                    return tool_data
+            else:
+                log_message(f"AI Key #{idx + 1} returned status {response.status_code}, switching to next key...")
+        except Exception as e:
+            log_message(f"AI Key #{idx + 1} failed: {e}. Trying next key...")
+            continue
+            
+    log_message("All configured AI API keys failed or exhausted during tool generation.")
+    return None
+
 def auto_expand_and_sync():
     config = load_config()
     if not config.get("running", False):
@@ -164,23 +159,21 @@ def auto_expand_and_sync():
 
     token = config.get("token", "").strip()
     if not token:
-        log_message("Error: GitHub Token is empty! Please configure it in admin panel.")
+        log_message("Error: GitHub Token is empty!")
         return
 
-    log_message("Scheduled task triggered: Expanding and syncing tool suite...")
+    log_message("Scheduled task triggered: Requesting AI to expand new tool...")
     tools = load_tools()
     existing_ids = {t["id"] for t in tools}
 
-    added_count = 0
-    for candidate in AUTO_EXPANSION_QUEUE:
-        if candidate["id"] not in existing_ids:
-            tools.append(candidate)
-            existing_ids.add(candidate["id"])
-            added_count += 1
-            log_message(f"Auto-expanded tool into [{candidate.get('category')}]: {candidate['name']}")
-
-    save_tools(tools)
-    generate_static_site_and_push(config, tools)
+    new_tool = generate_new_tool_via_ai(existing_ids)
+    if new_tool and new_tool["id"] not in existing_ids:
+        tools.append(new_tool)
+        save_tools(tools)
+        log_message(f"Added AI-generated tool: {new_tool['name']} [{new_tool.get('category')}]")
+        generate_static_site_and_push(config, tools)
+    else:
+        log_message("No new tool added in this cycle.")
 
 def generate_static_site_and_push(config, tools):
     token = config.get("token", "").strip()
@@ -192,13 +185,11 @@ def generate_static_site_and_push(config, tools):
     ad_footer = config.get("ad_footer", "")
     ad_tool_content = config.get("ad_tool_content", "")
     ai_keys_raw = config.get("ai_api_keys", "").strip()
-    ai_status_text = "Multi-AI Failover Active" if ai_keys_raw else "Standard Mode"
+    ai_status_text = "Multi-AI Active" if ai_keys_raw else "Standard Mode"
 
     if custom_domain:
         with open("CNAME", "w", encoding="utf-8") as f:
             f.write(custom_domain)
-        log_message(f"Custom domain CNAME generated: {custom_domain}")
-        
         domain_redirect_script = """
     <script>
         const allowedDomain = "__CUSTOM_DOMAIN__";
@@ -402,21 +393,19 @@ def generate_static_site_and_push(config, tools):
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_content)
 
-    # 智能 Git 提交与推送（自动检查是否有变动，避免工作区干净时报错）
     try:
         subprocess.run(["git", "add", "."], check=True)
         status_res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
-        
         if status_res.stdout.strip():
-            subprocess.run(["git", "commit", "-m", "Automated sync platform updates and domain configuration"], check=True)
+            subprocess.run(["git", "commit", "-m", "Automated AI tool generation and sync"], check=True)
             remote_url = f"https://{token}@github.com/{user}/{repo}.git"
             subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
             subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
             subprocess.run(["git", "branch", "-M", "main"], check=True)
             subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-            log_message("Success: Static site changes committed and pushed to GitHub!")
+            log_message("Success: AI-expanded site pushed to GitHub.")
         else:
-            log_message("Git sync: Working tree clean, no changes to commit.")
+            log_message("Git sync: Working tree clean, no changes.")
     except Exception as e:
         log_message(f"Error during Git sync: {e}")
 
@@ -443,7 +432,7 @@ ADMIN_HTML = """<!DOCTYPE html>
             <h1 class="text-3xl font-bold text-indigo-400">⚙️ Platform Admin Panel</h1>
             <div>
                 {% if config.running %}
-                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running</span>
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (AI Autonomous Mode)</span>
                 {% else %}
                     <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-semibold">■ Service Stopped</span>
                 {% endif %}
@@ -453,7 +442,7 @@ ADMIN_HTML = """<!DOCTYPE html>
         <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-6 flex items-center justify-between">
             <div>
                 <h2 class="text-sm font-semibold text-slate-200">Program Control</h2>
-                <p class="text-xs text-slate-400">Start or stop automated generation & GitHub synchronization.</p>
+                <p class="text-xs text-slate-400">Start or stop automated AI generation & GitHub synchronization.</p>
             </div>
             <div class="flex space-x-3">
                 <a href="/admin/start" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded transition text-sm shadow">▶ Start Service</a>
@@ -489,9 +478,9 @@ ADMIN_HTML = """<!DOCTYPE html>
             </div>
 
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">AI Model Multi-Keys Integration</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">AI Model Multi-Keys Integration (多密钥故障转移)</h2>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key)</label>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key，AI 将自动调用它们实时创造新工具)</label>
                     <textarea name="ai_api_keys" rows="3" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
                 </div>
             </div>
@@ -610,7 +599,7 @@ def admin_stop():
 
 @app.route("/admin/trigger")
 def admin_trigger():
-    log_message("Manual generation triggered.")
+    log_message("Manual AI generation triggered.")
     auto_expand_and_sync()
     return redirect(url_for("admin"))
 
