@@ -143,5 +143,26 @@
         "category": "Design & Media",
         "desc": "Generate QR codes instantly from text or URLs locally.",
         "html": "<input type=\"text\" id=\"qr-input\" value=\"https://github.com\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-3\" oninput=\"genQR()\"><div id=\"qr-out\" class=\"p-4 bg-slate-900 rounded border border-slate-700 text-center text-indigo-300 font-mono\">QR Code container</div>"
+    },
+    {
+        "id": "html_encode",
+        "name": "\ud83c\udf10 HTML Entity Coder",
+        "category": "Text & Formatting",
+        "desc": "Escape or unescape HTML special characters securely.",
+        "html": "<textarea id=\"html-in\" rows=\"2\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 mb-2\" placeholder=\"Enter HTML...\" oninput=\"escapeHTML()\"></textarea><textarea id=\"html-out\" rows=\"2\" readonly class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm font-mono text-indigo-300\"></textarea>"
+    },
+    {
+        "id": "unit_converter",
+        "name": "\ud83d\udcd0 Data Storage Unit Converter",
+        "category": "Math & Converters",
+        "desc": "Convert between Bytes, KB, MB, GB, and TB seamlessly.",
+        "html": "<div class=\"grid grid-cols-2 gap-3\"><input type=\"number\" id=\"byte-in\" value=\"1024\" class=\"p-2 bg-slate-900 border border-slate-700 rounded text-slate-100\" oninput=\"convBytes()\"><div class=\"p-2 bg-slate-900 rounded border border-slate-700 text-indigo-300 font-mono text-sm flex items-center\" id=\"byte-out\">1 KB</div></div>"
+    },
+    {
+        "id": "case_converter",
+        "name": "\ud83d\udd20 Text Case Converter",
+        "category": "Text & Formatting",
+        "desc": "Convert text between camelCase, snake_case, UPPER, lower.",
+        "html": "<textarea id=\"case-in\" rows=\"2\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2\" placeholder=\"Enter text...\" oninput=\"convCase()\"></textarea><div class=\"text-xs font-mono text-indigo-300 space-y-1\" id=\"case-out\">Converted results</div>"
     }
 ]
