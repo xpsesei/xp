@@ -19,9 +19,8 @@ DEFAULT_CONFIG = {
     "custom_domain": "",
     "interval": 3600,
     "running": False,
-    "ai_api_keys": "",
-    "ai_base_url": "https://api.openai.com/v1",
-    "ai_model": "gpt-4o-mini",
+    "gemini_api_keys": "",             # 支持多行输入多个 Gemini Key
+    "gemini_model": "gemini-1.5-flash", # Gemini 模型
     "ad_header": "",
     "ad_sidebar": "",
     "ad_tool_content": "",
@@ -52,8 +51,8 @@ DEFAULT_TOOLS = [
     }
 ]
 
-# 高质量离线工具扩展池（一次性批量全量添加）
-OFFLINE_EXPANSION_POOL = [
+# 备用离线工具池
+OFFLINE_BACKUP_POOL = [
     {
         "id": "qrcode",
         "name": "📱 QR Code Generator",
@@ -67,90 +66,6 @@ OFFLINE_EXPANSION_POOL = [
         "category": "Security & Cryptography",
         "desc": "Compute cryptographic hash sums locally in browser.",
         "html": '<textarea id="hash-input" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2" placeholder="Enter text to hash..." oninput="calcHash()"></textarea><div class="p-3 bg-slate-900 rounded border border-slate-700 text-xs font-mono text-emerald-400" id="hash-output">SHA-256 / MD5 output</div>'
-    },
-    {
-        "id": "regex",
-        "name": "🔍 Regex Tester",
-        "category": "Text & Formatting",
-        "desc": "Test regular expressions against custom input text.",
-        "html": '<div class="grid grid-cols-2 gap-3 mb-2"><input type="text" id="reg-pat" placeholder="Pattern (e.g. \\d+)" class="p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100"><input type="text" id="reg-flag" placeholder="Flags (g, i)" value="g" class="p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100"></div><textarea id="reg-txt" rows="2" placeholder="Test string..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 mb-2" oninput="testRegex()"></textarea><pre id="reg-res" class="p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300">Matches output</pre>'
-    },
-    {
-        "id": "html_encode",
-        "name": "🌐 HTML Entity Coder",
-        "category": "Text & Formatting",
-        "desc": "Escape or unescape HTML special characters securely.",
-        "html": '<textarea id="html-in" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 mb-2" placeholder="Enter HTML..." oninput="escapeHTML()"></textarea><textarea id="html-out" rows="2" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm font-mono text-indigo-300"></textarea>'
-    },
-    {
-        "id": "unit_converter",
-        "name": "📐 Data Storage Unit Converter",
-        "category": "Math & Converters",
-        "desc": "Convert between Bytes, KB, MB, GB, and TB seamlessly.",
-        "html": '<div class="grid grid-cols-2 gap-3"><input type="number" id="byte-in" value="1024" class="p-2 bg-slate-900 border border-slate-700 rounded text-slate-100" oninput="convBytes()"><div class="p-2 bg-slate-900 rounded border border-slate-700 text-indigo-300 font-mono text-sm flex items-center" id="byte-out">1 KB</div></div>'
-    },
-    {
-        "id": "case_converter",
-        "name": "🔠 Text Case Converter",
-        "category": "Text & Formatting",
-        "desc": "Convert text between camelCase, snake_case, UPPER, lower.",
-        "html": '<textarea id="case-in" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2" placeholder="Enter text..." oninput="convCase()"></textarea><div class="text-xs font-mono text-indigo-300 space-y-1" id="case-out">Converted results</div>'
-    },
-    {
-        "id": "uuid",
-        "name": "🆔 UUID v4 Generator",
-        "category": "Security & Cryptography",
-        "desc": "Generate random cryptographic unique identifiers.",
-        "html": '<button onclick="genUUID()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Generate UUID v4</button><input type="text" id="uuid-output" readonly class="w-full mt-3 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono">'
-    },
-    {
-        "id": "base64",
-        "name": "🔄 Base64 Encoder / Decoder",
-        "category": "Text & Formatting",
-        "desc": "Encode or decode text securely in your browser.",
-        "html": '<textarea id="b64-input" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Enter text..."></textarea><div class="flex space-x-3 mt-2"><button onclick="b64Encode()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Encode</button><button onclick="b64Decode()" class="bg-slate-700 text-white px-3 py-1 rounded text-xs">Decode</button></div><textarea id="b64-output" rows="2" readonly class="w-full mt-2 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm"></textarea>'
-    },
-    {
-        "id": "timestamp",
-        "name": "⏱️ Epoch Timestamp",
-        "category": "Math & Converters",
-        "desc": "Convert current or custom Epoch timestamp.",
-        "html": '<button onclick="getTimestamp()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs mb-2">Get Timestamp</button><input type="text" id="ts-output" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm">'
-    },
-    {
-        "id": "url",
-        "name": "🔗 URL Encoder / Decoder",
-        "category": "Network & DevOps",
-        "desc": "Safely encode and decode URL query strings.",
-        "html": '<textarea id="url-input" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Enter URL..."></textarea><div class="flex space-x-3 mt-2"><button onclick="urlEncode()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Encode</button><button onclick="urlDecode()" class="bg-slate-700 text-white px-3 py-1 rounded text-xs">Decode</button></div><textarea id="url-output" rows="2" readonly class="w-full mt-2 p-2 bg-slate-900 border border-slate-700 rounded text-indigo-300 font-mono text-sm"></textarea>'
-    },
-    {
-        "id": "markdown",
-        "name": "📝 Markdown Previewer",
-        "category": "Text & Formatting",
-        "desc": "Write Markdown and preview live formatting.",
-        "html": '<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><textarea id="md-input" rows="4" class="p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" oninput="renderMD()"># Hello\\nMarkdown preview</textarea><div id="md-output" class="p-3 bg-slate-900 rounded border border-slate-700 text-slate-200 text-sm"></div></div>'
-    },
-    {
-        "id": "jwt",
-        "name": "🛡️ JWT Inspector",
-        "category": "Security & Cryptography",
-        "desc": "Decode JSON Web Token header and payload locally.",
-        "html": '<textarea id="jwt-input" rows="3" placeholder="Paste JWT token..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" oninput="decodeJWT()"></textarea><div class="mt-3 grid grid-cols-2 gap-3"><pre id="jwt-header" class="p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto">Header</pre><pre id="jwt-payload" class="p-2 bg-slate-900 rounded text-xs font-mono text-slate-300 overflow-x-auto">Payload</pre></div>'
-    },
-    {
-        "id": "cron",
-        "name": "⏰ Cron Expression Parser",
-        "category": "Network & DevOps",
-        "desc": "Analyze Cron schedule expressions easily.",
-        "html": '<input type="text" id="cron-input" value="0 * * * *" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2 font-mono text-sm" oninput="parseCron()"><div id="cron-out" class="p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300">Every hour schedule format</div>'
-    },
-    {
-        "id": "sql_fmt",
-        "name": "🗄️ SQL Formatter",
-        "category": "Data & Database",
-        "desc": "Clean and format SQL query statements.",
-        "html": '<textarea id="sql-input" rows="3" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="SELECT...">SELECT id, name FROM users WHERE active = 1;</textarea><button onclick="formatSQL()" class="mt-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs">Format SQL</button><pre id="sql-out" class="mt-2 p-2 bg-slate-900 rounded text-xs font-mono text-emerald-400"></pre>'
     }
 ]
 
@@ -202,6 +117,60 @@ def log_message(msg):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(formatted)
 
+# 核心：Gemini 多密钥轮询与自动故障转移
+def generate_new_tool_via_gemini(existing_ids):
+    config = load_config()
+    keys_raw = config.get("gemini_api_keys", "")
+    keys = [k.strip() for k in keys_raw.split("\n") if k.strip()]
+    
+    if not keys:
+        log_message("Gemini Info: No API keys configured. Using backup pool.")
+        return None
+
+    model = config.get("gemini_model", "gemini-1.5-flash").strip()
+    prompt = f"""You are an expert full-stack developer. Create a brand new, unique, highly useful browser-based developer utility tool (e.g., CSS Flexbox Playground, YAML to JSON converter, JWT Expiry Checker, Regex Cheatsheet, Base64 Image to DataURL converter, etc.) that is NOT in this existing list of IDs: {list(existing_ids)}.
+Return ONLY a valid JSON object (no markdown wrapping, no backticks) with these exact keys:
+{{
+  "id": "unique_string_id",
+  "name": "Emoji & Tool Name",
+  "category": "Security & Cryptography" or "Network & DevOps" or "Data & Database" or "Text & Formatting" or "Math & Converters" or "Design & Media",
+  "desc": "Short description of what the tool does",
+  "html": "Tailwind CSS styled HTML form elements and interactive JavaScript logic with inline event handlers"
+}}"""
+
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+
+    for idx, key in enumerate(keys):
+        try:
+            log_message(f"Attempting Gemini request using Key #{idx + 1}...")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+            response = requests.post(url, headers=headers, json=data, timeout=35)
+            
+            if response.status_code == 200:
+                res_json = response.json()
+                content = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.endswith("```"):
+                    content = content[:-3]
+                tool_data = json.loads(content.strip())
+                if "id" in tool_data and "html" in tool_data:
+                    log_message(f"Successfully generated new tool via Gemini (Key #{idx + 1}): {tool_data.get('name')}")
+                    return tool_data
+            else:
+                log_message(f"Gemini Key #{idx + 1} returned error status {response.status_code}: {response.text}. Rotating to next key...")
+        except Exception as e:
+            log_message(f"Gemini Key #{idx + 1} exception: {e}. Rotating to next key...")
+            continue
+            
+    log_message("All Gemini API keys failed or exhausted. Falling back to offline backup pool.")
+    return None
+
 def auto_expand_and_sync():
     config = load_config()
     if not config.get("running", False):
@@ -212,24 +181,28 @@ def auto_expand_and_sync():
         log_message("Error: GitHub Token is empty!")
         return
 
-    log_message("Scheduled task triggered: Batch expanding all tools...")
+    log_message("Scheduled task triggered: Generating new tool via Gemini...")
     tools = load_tools()
     existing_ids = {t["id"] for t in tools}
 
-    added_count = 0
-    for candidate in OFFLINE_EXPANSION_POOL:
-        if candidate["id"] not in existing_ids:
-            tools.append(candidate)
-            existing_ids.add(candidate["id"])
-            added_count += 1
-            log_message(f"Batch expansion: Added [{candidate.get('category')}] {candidate['name']}")
+    # 优先尝试多密钥轮询调用 Gemini 生成
+    new_tool = generate_new_tool_via_gemini(existing_ids)
 
-    if added_count > 0:
+    # 如果所有 Key 均失败或未配置，从备用池中取一个
+    if not new_tool:
+        for candidate in OFFLINE_BACKUP_POOL:
+            if candidate["id"] not in existing_ids:
+                new_tool = candidate
+                log_message(f"Backup pool fallback: Added {candidate['name']}")
+                break
+
+    if new_tool and new_tool["id"] not in existing_ids:
+        tools.append(new_tool)
         save_tools(tools)
         generate_static_site_and_push(config, tools)
-        log_message(f"Success: Batch added {added_count} new tools and pushed to GitHub!")
+        log_message(f"Success: Added new tool [{new_tool['name']}] and pushed to GitHub!")
     else:
-        log_message("Batch expansion: All tools already exist in suite.")
+        log_message("No new tool generated in this cycle.")
 
 def generate_static_site_and_push(config, tools):
     token = config.get("token", "").strip()
@@ -240,7 +213,7 @@ def generate_static_site_and_push(config, tools):
     ad_sidebar = config.get("ad_sidebar", "")
     ad_footer = config.get("ad_footer", "")
     ad_tool_content = config.get("ad_tool_content", "")
-    ai_status_text = "Batch Auto-Expansion Active"
+    ai_status_text = "Gemini Multi-Key Failover Active"
 
     if custom_domain:
         with open("CNAME", "w", encoding="utf-8") as f:
@@ -391,29 +364,6 @@ def generate_static_site_and_push(config, tools):
             let txt = document.getElementById('hash-input').value;
             document.getElementById('hash-output').innerText = "MD5/SHA simulated hash for length " + txt.length;
         }
-        function testRegex() {
-            try {
-                let pat = document.getElementById('reg-pat').value;
-                let txt = document.getElementById('reg-txt').value;
-                let reg = new RegExp(pat, document.getElementById('reg-flag').value);
-                let m = txt.match(reg);
-                document.getElementById('reg-res').innerText = m ? "Match found: " + JSON.stringify(m) : "No match";
-            } catch(e) {
-                document.getElementById('reg-res').innerText = "Regex Error: " + e.message;
-            }
-        }
-        function escapeHTML() {
-            let t = document.getElementById('html-in').value;
-            document.getElementById('html-out').value = t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-        function convBytes() {
-            let b = document.getElementById('byte-in').value;
-            document.getElementById('byte-out').innerText = (b / 1024).toFixed(2) + " KB (" + (b / 1048576).toFixed(4) + " MB)";
-        }
-        function convCase() {
-            let t = document.getElementById('case-in').value;
-            document.getElementById('case-out').innerText = "UPPER: " + t.toUpperCase() + "\\nlower: " + t.toLowerCase();
-        }
 
         window.addEventListener('hashchange', renderTool);
         renderTool();
@@ -439,13 +389,13 @@ def generate_static_site_and_push(config, tools):
         subprocess.run(["git", "add", "."], check=True)
         status_res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         if status_res.stdout.strip():
-            subprocess.run(["git", "commit", "-m", "Batch expansion of all developer tools"], check=True)
+            subprocess.run(["git", "commit", "-m", "Gemini multi-key failover tool expansion and sync"], check=True)
             remote_url = f"https://{token}@github.com/{user}/{repo}.git"
             subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
             subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
             subprocess.run(["git", "branch", "-M", "main"], check=True)
             subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-            log_message("Success: Batch expanded site pushed to GitHub.")
+            log_message("Success: Gemini multi-key site pushed to GitHub.")
         else:
             log_message("Git sync: Working tree clean, no changes.")
     except Exception as e:
@@ -474,7 +424,7 @@ ADMIN_HTML = """<!DOCTYPE html>
             <h1 class="text-3xl font-bold text-indigo-400">⚙️ Platform Admin Panel</h1>
             <div>
                 {% if config.running %}
-                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (Batch Mode)</span>
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (Gemini Multi-Key Failover)</span>
                 {% else %}
                     <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-semibold">■ Service Stopped</span>
                 {% endif %}
@@ -484,7 +434,7 @@ ADMIN_HTML = """<!DOCTYPE html>
         <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-6 flex items-center justify-between">
             <div>
                 <h2 class="text-sm font-semibold text-slate-200">Program Control</h2>
-                <p class="text-xs text-slate-400">Start or stop automated batch expansion & GitHub synchronization.</p>
+                <p class="text-xs text-slate-400">Start or stop automated Gemini multi-key generation & GitHub synchronization.</p>
             </div>
             <div class="flex space-x-3">
                 <a href="/admin/start" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded transition text-sm shadow">▶ Start Service</a>
@@ -519,20 +469,16 @@ ADMIN_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- 重新把 AI 设置区域加入面板 -->
+            <!-- Gemini 多密钥配置专区 -->
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">AI Model & API Integration (大模型高级配置)</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">Gemini AI Multi-Keys Integration (多密钥故障转移)</h2>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">AI API Base URL</label>
-                    <input type="text" name="ai_base_url" value="{{ config.ai_base_url }}" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                    <label class="block text-sm font-medium text-slate-300">Gemini Model Name</label>
+                    <input type="text" name="gemini_model" value="{{ config.gemini_model }}" placeholder="gemini-1.5-flash" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">AI Model Name</label>
-                    <input type="text" name="ai_model" value="{{ config.ai_model }}" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key)</label>
-                    <textarea name="ai_api_keys" rows="2" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Gemini API Keys (每行输入一个 Key，一个不可用时自动轮换替换)</label>
+                    <textarea name="gemini_api_keys" rows="3" placeholder="AIzaSy...&#10;AIzaSy..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.gemini_api_keys }}</textarea>
                 </div>
             </div>
 
@@ -612,9 +558,8 @@ def admin_save():
     config["token"] = request.form.get("token", "")
     config["custom_domain"] = request.form.get("custom_domain", "").strip()
     config["interval"] = int(request.form.get("interval", 3600))
-    config["ai_base_url"] = request.form.get("ai_base_url", "https://api.openai.com/v1").strip()
-    config["ai_model"] = request.form.get("ai_model", "gpt-4o-mini").strip()
-    config["ai_api_keys"] = request.form.get("ai_api_keys", "").strip()
+    config["gemini_api_keys"] = request.form.get("gemini_api_keys", "").strip()
+    config["gemini_model"] = request.form.get("gemini_model", "gemini-1.5-flash").strip()
     config["ad_header"] = request.form.get("ad_header", "")
     config["ad_sidebar"] = request.form.get("ad_sidebar", "")
     config["ad_footer"] = request.form.get("ad_footer", "")
@@ -652,7 +597,7 @@ def admin_stop():
 
 @app.route("/admin/trigger")
 def admin_trigger():
-    log_message("Manual batch expansion triggered.")
+    log_message("Manual Gemini generation triggered.")
     auto_expand_and_sync()
     return redirect(url_for("admin"))
 
