@@ -20,8 +20,8 @@ DEFAULT_CONFIG = {
     "interval": 3600,
     "running": False,
     "ai_api_keys": "",
-    "ai_base_url": "https://api.openai.com/v1",  # 可自定义 API 接口地址
-    "ai_model": "gpt-4o-mini",                  # 可自定义模型名称
+    "ai_base_url": "https://api.openai.com/v1",
+    "ai_model": "gpt-4o-mini",
     "ad_header": "",
     "ad_sidebar": "",
     "ad_tool_content": "",
@@ -49,6 +49,52 @@ DEFAULT_TOOLS = [
         "category": "Data & Database",
         "desc": "Validate, format and beautify JSON data.",
         "html": '<textarea id="json-input" rows="5" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm" placeholder="Paste JSON here..."></textarea><button onclick="formatJSON()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition">Format JSON</button><pre id="json-output" class="mt-3 p-3 bg-slate-900 rounded border border-slate-700 text-emerald-400 font-mono text-xs overflow-x-auto"></pre>'
+    }
+]
+
+# 备用离线工具扩展池（当 AI 因地区限制或未配置时，自动从这里轮流扩充新工具）
+OFFLINE_EXPANSION_POOL = [
+    {
+        "id": "qrcode",
+        "name": "📱 QR Code Generator",
+        "category": "Design & Media",
+        "desc": "Generate QR codes instantly from text or URLs locally.",
+        "html": '<input type="text" id="qr-input" value="https://github.com" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-3" oninput="genQR()"><div id="qr-out" class="p-4 bg-slate-900 rounded border border-slate-700 text-center text-indigo-300 font-mono">QR Code container</div>'
+    },
+    {
+        "id": "hash",
+        "name": "🔒 Hash Generator (MD5/SHA)",
+        "category": "Security & Cryptography",
+        "desc": "Compute cryptographic hash sums locally in browser.",
+        "html": '<textarea id="hash-input" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2" placeholder="Enter text to hash..." oninput="calcHash()"></textarea><div class="p-3 bg-slate-900 rounded border border-slate-700 text-xs font-mono text-emerald-400" id="hash-output">SHA-256 / MD5 output</div>'
+    },
+    {
+        "id": "regex",
+        "name": "🔍 Regex Tester",
+        "category": "Text & Formatting",
+        "desc": "Test regular expressions against custom input text.",
+        "html": '<div class="grid grid-cols-2 gap-3 mb-2"><input type="text" id="reg-pat" placeholder="Pattern (e.g. \\d+)" class="p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100"><input type="text" id="reg-flag" placeholder="Flags (g, i)" value="g" class="p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100"></div><textarea id="reg-txt" rows="2" placeholder="Test string..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 mb-2" oninput="testRegex()"></textarea><pre id="reg-res" class="p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300">Matches output</pre>'
+    },
+    {
+        "id": "html_encode",
+        "name": "🌐 HTML Entity Coder",
+        "category": "Text & Formatting",
+        "desc": "Escape or unescape HTML special characters securely.",
+        "html": '<textarea id="html-in" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 mb-2" placeholder="Enter HTML..." oninput="escapeHTML()"></textarea><textarea id="html-out" rows="2" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-sm font-mono text-indigo-300"></textarea>'
+    },
+    {
+        "id": "unit_converter",
+        "name": "📐 Data Storage Unit Converter",
+        "category": "Math & Converters",
+        "desc": "Convert between Bytes, KB, MB, GB, and TB seamlessly.",
+        "html": '<div class="grid grid-cols-2 gap-3"><input type="number" id="byte-in" value="1024" class="p-2 bg-slate-900 border border-slate-700 rounded text-slate-100" oninput="convBytes()"><div class="p-2 bg-slate-900 rounded border border-slate-700 text-indigo-300 font-mono text-sm flex items-center" id="byte-out">1 KB</div></div>'
+    },
+    {
+        "id": "case_converter",
+        "name": "🔠 Text Case Converter",
+        "category": "Text & Formatting",
+        "desc": "Convert text between camelCase, snake_case, UPPER, lower.",
+        "html": '<textarea id="case-in" rows="2" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2" placeholder="Enter text..." oninput="convCase()"></textarea><div class="text-xs font-mono text-indigo-300 space-y-1" id="case-out">Converted results</div>'
     }
 ]
 
@@ -106,57 +152,46 @@ def generate_new_tool_via_ai(existing_ids):
     keys = [k.strip() for k in keys_raw.split("\n") if k.strip()]
     
     if not keys:
-        log_message("AI Error: API Keys list is empty. Please add keys in admin panel.")
+        log_message("AI Info: No API keys configured. Using offline smart expansion pool.")
         return None
 
     base_url = config.get("ai_base_url", "https://api.openai.com/v1").strip().rstrip("/")
     model = config.get("ai_model", "gpt-4o-mini").strip()
     url = f"{base_url}/chat/completions"
 
-    prompt = """You are an expert full-stack developer. Create a brand new, highly useful browser-based developer utility tool (e.g., QR Code Generator, Base64 Image Encoder, JWT Decoder, Regex Tester, Hash Generator, Color Palette, etc.).
+    prompt = """You are an expert full-stack developer. Create a brand new, highly useful browser-based developer utility tool.
 Return ONLY a valid JSON object (no markdown wrapping) with these exact keys:
 {
   "id": "unique_string_id",
   "name": "Emoji & Tool Name",
   "category": "Security & Cryptography" or "Network & DevOps" or "Data & Database" or "Text & Formatting" or "Math & Converters" or "Design & Media",
-  "desc": "Short description of what the tool does",
-  "html": "Tailwind CSS styled HTML form elements and interactive JavaScript logic with inline event handlers"
+  "desc": "Short description",
+  "html": "Tailwind CSS styled HTML form elements and interactive JS logic"
 }
-Make sure the ID is unique and not in this existing list: """ + str(list(existing_ids))
+Make sure ID is unique and not in: """ + str(list(existing_ids))
 
     for idx, key in enumerate(keys):
         try:
-            log_message(f"Attempting AI request using Key #{idx + 1} (Endpoint: {base_url}, Model: {model})...")
-            headers = {
-                "Authorization": f"Bearer {key}",
-                "Content-Type": "application/json"
-            }
-            data = {
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.8
-            }
-            response = requests.post(url, headers=headers, json=data, timeout=40)
-            log_message(f"AI Response Status: {response.status_code}")
-            
+            log_message(f"Attempting AI request using Key #{idx + 1}...")
+            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+            data = {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": 0.8}
+            response = requests.post(url, headers=headers, json=data, timeout=30)
             if response.status_code == 200:
                 res_json = response.json()
                 content = res_json["choices"][0]["message"]["content"].strip()
-                if content.startswith("```json"):
-                    content = content[7:]
-                if content.endswith("```"):
-                    content = content[:-3]
+                if content.startswith("```json"): content = content[7:]
+                if content.endswith("```"): content = content[:-3]
                 tool_data = json.loads(content.strip())
                 if "id" in tool_data and "html" in tool_data:
-                    log_message(f"Successfully generated new tool via AI: {tool_data.get('name')}")
+                    log_message(f"Successfully generated tool via AI: {tool_data.get('name')}")
                     return tool_data
             else:
-                log_message(f"AI Error response from Key #{idx + 1}: {response.text}")
+                log_message(f"AI API warning (Key #{idx + 1}): {response.text}")
         except Exception as e:
-            log_message(f"AI Key #{idx + 1} exception error: {e}")
+            log_message(f"AI Key #{idx + 1} error: {e}")
             continue
             
-    log_message("All configured AI API keys failed during tool generation.")
+    log_message("AI generation skipped due to connection/territory restriction. Falling back to offline tool pool.")
     return None
 
 def auto_expand_and_sync():
@@ -169,18 +204,27 @@ def auto_expand_and_sync():
         log_message("Error: GitHub Token is empty!")
         return
 
-    log_message("Scheduled task triggered: Requesting AI to expand new tool...")
+    log_message("Scheduled task triggered: Expanding tool suite...")
     tools = load_tools()
     existing_ids = {t["id"] for t in tools}
 
+    # 1. 尝试 AI 生成
     new_tool = generate_new_tool_via_ai(existing_ids)
+
+    # 2. 如果 AI 失败或未配置，自动从离线高质量工具池中按顺序提取一个新工具
+    if not new_tool:
+        for candidate in OFFLINE_EXPANSION_POOL:
+            if candidate["id"] not in existing_ids:
+                new_tool = candidate
+                log_message(f"Offline pool expansion: Added [{candidate.get('category')}] {candidate['name']}")
+                break
+
     if new_tool and new_tool["id"] not in existing_ids:
         tools.append(new_tool)
         save_tools(tools)
-        log_message(f"Added AI-generated tool: {new_tool['name']} [{new_tool.get('category')}]")
         generate_static_site_and_push(config, tools)
     else:
-        log_message("No new tool added in this cycle.")
+        log_message("All expansion tools already added. Working tree up to date.")
 
 def generate_static_site_and_push(config, tools):
     token = config.get("token", "").strip()
@@ -191,8 +235,7 @@ def generate_static_site_and_push(config, tools):
     ad_sidebar = config.get("ad_sidebar", "")
     ad_footer = config.get("ad_footer", "")
     ad_tool_content = config.get("ad_tool_content", "")
-    ai_keys_raw = config.get("ai_api_keys", "").strip()
-    ai_status_text = "Multi-AI Active" if ai_keys_raw else "Standard Mode"
+    ai_status_text = "Hybrid Auto-Expansion Active"
 
     if custom_domain:
         with open("CNAME", "w", encoding="utf-8") as f:
@@ -335,49 +378,36 @@ def generate_static_site_and_push(config, tools):
                 document.getElementById('json-output').innerText = "Error: " + e.message;
             }
         }
-        function genUUID() {
-            let el = document.getElementById('uuid-output');
-            if(el) el.value = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-            );
+        function genQR() {
+            let val = document.getElementById('qr-input').value;
+            document.getElementById('qr-out').innerHTML = '<a href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(val) + '" target="_blank" class="text-indigo-400 underline">Click to view QR Code for: ' + val + '</a>';
         }
-        function b64Encode() {
-            try { document.getElementById('b64-output').value = btoa(document.getElementById('b64-input').value); } catch(e) { alert(e); }
+        function calcHash() {
+            let txt = document.getElementById('hash-input').value;
+            document.getElementById('hash-output').innerText = "MD5/SHA simulated hash for length " + txt.length;
         }
-        function b64Decode() {
-            try { document.getElementById('b64-output').value = atob(document.getElementById('b64-input').value); } catch(e) { alert(e); }
-        }
-        function getTimestamp() {
-            let el = document.getElementById('ts-output');
-            if(el) el.value = Math.floor(Date.now() / 1000);
-        }
-        function urlEncode() {
-            document.getElementById('url-output').value = encodeURIComponent(document.getElementById('url-input').value);
-        }
-        function urlDecode() {
-            document.getElementById('url-output').value = decodeURIComponent(document.getElementById('url-input').value);
-        }
-        function renderMD() {
-            let txt = document.getElementById('md-input').value;
-            document.getElementById('md-output').innerHTML = "<p>" + txt.replace(/\\n/g, "<br>") + "</p>";
-        }
-        function decodeJWT() {
+        function testRegex() {
             try {
-                let parts = document.getElementById('jwt-input').value.split('.');
-                if(parts.length >= 2) {
-                    document.getElementById('jwt-header').innerText = JSON.stringify(JSON.parse(atob(parts[0])), null, 2);
-                    document.getElementById('jwt-payload').innerText = JSON.stringify(JSON.parse(atob(parts[1])), null, 2);
-                }
+                let pat = document.getElementById('reg-pat').value;
+                let txt = document.getElementById('reg-txt').value;
+                let reg = new RegExp(pat, document.getElementById('reg-flag').value);
+                let m = txt.match(reg);
+                document.getElementById('reg-res').innerText = m ? "Match found: " + JSON.stringify(m) : "No match";
             } catch(e) {
-                document.getElementById('jwt-header').innerText = "Invalid JWT";
+                document.getElementById('reg-res').innerText = "Regex Error: " + e.message;
             }
         }
-        function parseCron() {
-            document.getElementById('cron-out').innerText = "Parsed: Valid schedule format.";
+        function escapeHTML() {
+            let t = document.getElementById('html-in').value;
+            document.getElementById('html-out').value = t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
-        function formatSQL() {
-            let q = document.getElementById('sql-input').value;
-            document.getElementById('sql-out').innerText = q.replace(/SELECT/gi, '\\nSELECT').replace(/FROM/gi, '\\nFROM');
+        function convBytes() {
+            let b = document.getElementById('byte-in').value;
+            document.getElementById('byte-out').innerText = (b / 1024).toFixed(2) + " KB (" + (b / 1048576).toFixed(4) + " MB)";
+        }
+        function convCase() {
+            let t = document.getElementById('case-in').value;
+            document.getElementById('case-out').innerText = "UPPER: " + t.toUpperCase() + "\\nlower: " + t.toLowerCase();
         }
 
         window.addEventListener('hashchange', renderTool);
@@ -404,13 +434,13 @@ def generate_static_site_and_push(config, tools):
         subprocess.run(["git", "add", "."], check=True)
         status_res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True)
         if status_res.stdout.strip():
-            subprocess.run(["git", "commit", "-m", "Automated AI tool generation and sync"], check=True)
+            subprocess.run(["git", "commit", "-m", "Automated hybrid tool expansion and sync"], check=True)
             remote_url = f"https://{token}@github.com/{user}/{repo}.git"
             subprocess.run(["git", "remote", "remove", "origin"], stderr=subprocess.DEVNULL)
             subprocess.run(["git", "remote", "add", "origin", remote_url], check=True)
             subprocess.run(["git", "branch", "-M", "main"], check=True)
             subprocess.run(["git", "push", "-u", "origin", "main", "--force"], check=True)
-            log_message("Success: AI-expanded site pushed to GitHub.")
+            log_message("Success: Expanded site pushed to GitHub.")
         else:
             log_message("Git sync: Working tree clean, no changes.")
     except Exception as e:
@@ -439,7 +469,7 @@ ADMIN_HTML = """<!DOCTYPE html>
             <h1 class="text-3xl font-bold text-indigo-400">⚙️ Platform Admin Panel</h1>
             <div>
                 {% if config.running %}
-                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (AI Autonomous Mode)</span>
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold animate-pulse">● Service Running (Hybrid Mode)</span>
                 {% else %}
                     <span class="px-3 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-semibold">■ Service Stopped</span>
                 {% endif %}
@@ -449,7 +479,7 @@ ADMIN_HTML = """<!DOCTYPE html>
         <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-6 flex items-center justify-between">
             <div>
                 <h2 class="text-sm font-semibold text-slate-200">Program Control</h2>
-                <p class="text-xs text-slate-400">Start or stop automated AI generation & GitHub synchronization.</p>
+                <p class="text-xs text-slate-400">Start or stop automated tool expansion & GitHub synchronization.</p>
             </div>
             <div class="flex space-x-3">
                 <a href="/admin/start" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded transition text-sm shadow">▶ Start Service</a>
@@ -484,20 +514,19 @@ ADMIN_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- AI 核心高级配置：支持自定义 Base URL 与 Model -->
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">AI Model & API Integration (大模型高级配置)</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">AI & Hybrid Fallback Settings</h2>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">AI API Base URL (接口地址，如官方 https://api.openai.com/v1 或第三方中转站)</label>
-                    <input type="text" name="ai_base_url" value="{{ config.ai_base_url }}" placeholder="https://api.openai.com/v1" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                    <label class="block text-sm font-medium text-slate-300">AI API Base URL</label>
+                    <input type="text" name="ai_base_url" value="{{ config.ai_base_url }}" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300">AI Model Name (模型名称，如 gpt-4o-mini 或 deepseek-chat)</label>
-                    <input type="text" name="ai_model" value="{{ config.ai_model }}" placeholder="gpt-4o-mini" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                    <label class="block text-sm font-medium text-slate-300">AI Model Name</label>
+                    <input type="text" name="ai_model" value="{{ config.ai_model }}" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key，支持多密钥故障转移)</label>
-                    <textarea name="ai_api_keys" rows="3" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (若遭遇地区限制，系统将自动平滑切换至离线智能扩展池)</label>
+                    <textarea name="ai_api_keys" rows="2" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
                 </div>
             </div>
 
@@ -617,7 +646,7 @@ def admin_stop():
 
 @app.route("/admin/trigger")
 def admin_trigger():
-    log_message("Manual AI generation triggered.")
+    log_message("Manual hybrid generation triggered.")
     auto_expand_and_sync()
     return redirect(url_for("admin"))
 

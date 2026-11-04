@@ -136,5 +136,12 @@
         "name": "\ud83d\uddc4\ufe0f SQL Formatter",
         "desc": "Clean and format SQL query statements.",
         "html": "<textarea id=\"sql-input\" rows=\"3\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm\" placeholder=\"SELECT * FROM users...\">SELECT id, name FROM users WHERE active = 1;</textarea><button onclick=\"formatSQL()\" class=\"mt-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs\">Format SQL</button><pre id=\"sql-out\" class=\"mt-2 p-2 bg-slate-900 rounded text-xs font-mono text-emerald-400\"></pre>"
+    },
+    {
+        "id": "qrcode",
+        "name": "\ud83d\udcf1 QR Code Generator",
+        "category": "Design & Media",
+        "desc": "Generate QR codes instantly from text or URLs locally.",
+        "html": "<input type=\"text\" id=\"qr-input\" value=\"https://github.com\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-3\" oninput=\"genQR()\"><div id=\"qr-out\" class=\"p-4 bg-slate-900 rounded border border-slate-700 text-center text-indigo-300 font-mono\">QR Code container</div>"
     }
 ]
