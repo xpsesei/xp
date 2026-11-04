@@ -164,5 +164,40 @@
         "category": "Text & Formatting",
         "desc": "Convert text between camelCase, snake_case, UPPER, lower.",
         "html": "<textarea id=\"case-in\" rows=\"2\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 mb-2\" placeholder=\"Enter text...\" oninput=\"convCase()\"></textarea><div class=\"text-xs font-mono text-indigo-300 space-y-1\" id=\"case-out\">Converted results</div>"
+    },
+    {
+        "id": "box_shadow",
+        "name": "\u2728 CSS Box Shadow Generator",
+        "category": "Design & Media",
+        "desc": "Generate custom CSS box shadows with live preview.",
+        "html": "<div class=\"grid grid-cols-2 gap-2 mb-2 text-xs\"><label>Blur: <input type=\"range\" id=\"bs-blur\" value=\"15\" min=\"0\" max=\"50\" oninput=\"genShadow()\"></label><label>Spread: <input type=\"range\" id=\"bs-spread\" value=\"3\" min=\"-20\" max=\"50\" oninput=\"genShadow()\"></label></div><div id=\"bs-preview\" class=\"h-16 bg-indigo-600 rounded mb-2 flex items-center justify-center text-xs\">Preview Box</div><input type=\"text\" id=\"bs-code\" readonly class=\"w-full p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\">"
+    },
+    {
+        "id": "diff_checker",
+        "name": "\ud83d\udcd1 Text Diff Comparator",
+        "category": "Text & Formatting",
+        "desc": "Compare differences between two blocks of text.",
+        "html": "<div class=\"grid grid-cols-2 gap-2 mb-2\"><textarea id=\"diff-1\" rows=\"2\" class=\"p-2 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100\" placeholder=\"Original...\" oninput=\"checkDiff()\"></textarea><textarea id=\"diff-2\" rows=\"2\" class=\"p-2 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100\" placeholder=\"Modified...\" oninput=\"checkDiff()\"></textarea></div><div id=\"diff-out\" class=\"p-2 bg-slate-900 rounded text-xs font-mono text-indigo-300\">Comparison result</div>"
+    },
+    {
+        "id": "flex_playground",
+        "name": "\ud83d\udce6 CSS Flexbox Playground",
+        "category": "Design & Media",
+        "desc": "Interactive visual layout tester for CSS Flexbox properties.",
+        "html": "<div class=\"flex gap-2 mb-2 text-xs\"><select id=\"flex-dir\" class=\"bg-slate-900 p-1 rounded text-slate-100\" onchange=\"updateFlex()\"><option value=\"row\">row</option><option value=\"column\">column</option></select><select id=\"flex-justify\" class=\"bg-slate-900 p-1 rounded text-slate-100\" onchange=\"updateFlex()\"><option value=\"flex-start\">flex-start</option><option value=\"center\">center</option><option value=\"space-between\">space-between</option></select></div><div id=\"flex-box\" class=\"h-24 bg-slate-900 border border-slate-700 rounded flex gap-2 p-2\"><div class=\"w-8 h-8 bg-indigo-500 rounded\"></div><div class=\"w-8 h-8 bg-purple-500 rounded\"></div><div class=\"w-8 h-8 bg-pink-500 rounded\"></div></div>"
+    },
+    {
+        "id": "ascii_art",
+        "name": "\ud83d\uddbc\ufe0f ASCII Text Banner",
+        "category": "Design & Media",
+        "desc": "Convert standard strings into large ASCII art text banners.",
+        "html": "<input type=\"text\" id=\"ascii-in\" value=\"DEV\" class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100 mb-2\" oninput=\"genASCII()\"><pre id=\"ascii-out\" class=\"p-2 bg-slate-900 rounded text-[10px] font-mono text-emerald-400\">ASCII banner</pre>"
+    },
+    {
+        "id": "lorem_ipsum",
+        "name": "\ud83d\udcc4 Lorem Ipsum Generator",
+        "category": "Text & Formatting",
+        "desc": "Generate placeholder dummy text for mock designs.",
+        "html": "<button onclick=\"genLorem()\" class=\"bg-indigo-600 text-white px-3 py-1 rounded text-xs mb-2\">Generate Paragraph</button><textarea id=\"lorem-out\" rows=\"3\" readonly class=\"w-full p-2 bg-slate-900 border border-slate-700 rounded text-xs font-mono text-indigo-300\"></textarea>"
     }
 ]
