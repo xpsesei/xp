@@ -52,7 +52,7 @@ DEFAULT_TOOLS = [
     }
 ]
 
-# 丰富的离线高质量工具池（包含多领域实用工具，一次性全量添加）
+# 高质量离线工具扩展池（一次性批量全量添加）
 OFFLINE_EXPANSION_POOL = [
     {
         "id": "qrcode",
@@ -217,7 +217,6 @@ def auto_expand_and_sync():
     existing_ids = {t["id"] for t in tools}
 
     added_count = 0
-    # 修改为全量批量添加：遍历池子中所有未添加的工具，一次性全部加满！
     for candidate in OFFLINE_EXPANSION_POOL:
         if candidate["id"] not in existing_ids:
             tools.append(candidate)
@@ -520,6 +519,23 @@ ADMIN_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- 重新把 AI 设置区域加入面板 -->
+            <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
+                <h2 class="text-lg font-semibold text-indigo-300">AI Model & API Integration (大模型高级配置)</h2>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">AI API Base URL</label>
+                    <input type="text" name="ai_base_url" value="{{ config.ai_base_url }}" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">AI Model Name</label>
+                    <input type="text" name="ai_model" value="{{ config.ai_model }}" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key)</label>
+                    <textarea name="ai_api_keys" rows="2" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
+                </div>
+            </div>
+
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
                 <h2 class="text-lg font-semibold text-indigo-300">Multi-Ad Network Slots (多广告位配置)</h2>
                 <div>
@@ -596,6 +612,9 @@ def admin_save():
     config["token"] = request.form.get("token", "")
     config["custom_domain"] = request.form.get("custom_domain", "").strip()
     config["interval"] = int(request.form.get("interval", 3600))
+    config["ai_base_url"] = request.form.get("ai_base_url", "https://api.openai.com/v1").strip()
+    config["ai_model"] = request.form.get("ai_model", "gpt-4o-mini").strip()
+    config["ai_api_keys"] = request.form.get("ai_api_keys", "").strip()
     config["ad_header"] = request.form.get("ad_header", "")
     config["ad_sidebar"] = request.form.get("ad_sidebar", "")
     config["ad_footer"] = request.form.get("ad_footer", "")
