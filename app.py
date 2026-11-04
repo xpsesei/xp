@@ -20,6 +20,8 @@ DEFAULT_CONFIG = {
     "interval": 3600,
     "running": False,
     "ai_api_keys": "",
+    "ai_base_url": "https://api.openai.com/v1",  # 可自定义 API 接口地址
+    "ai_model": "gpt-4o-mini",                  # 可自定义模型名称
     "ad_header": "",
     "ad_sidebar": "",
     "ad_tool_content": "",
@@ -86,7 +88,7 @@ def get_logs():
         try:
             with open(LOG_FILE, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                return "".join(lines[-60:])
+                return "".join(lines[-70:])
         except Exception as e:
             return f"Error reading log: {e}"
     return "No execution logs yet."
@@ -98,17 +100,20 @@ def log_message(msg):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(formatted)
 
-# 核心：通过多密钥故障转移调用大模型实时生成新工具
 def generate_new_tool_via_ai(existing_ids):
     config = load_config()
     keys_raw = config.get("ai_api_keys", "")
     keys = [k.strip() for k in keys_raw.split("\n") if k.strip()]
     
     if not keys:
-        log_message("AI Keys list is empty. Please configure AI API keys in admin panel to generate new tools.")
+        log_message("AI Error: API Keys list is empty. Please add keys in admin panel.")
         return None
 
-    prompt = """You are an expert full-stack developer. Create a brand new, highly useful browser-based developer utility tool (e.g., QR Code Generator, Base64 Image Encoder, JWT Decoder, Regex Tester, Hash Generator, etc.).
+    base_url = config.get("ai_base_url", "https://api.openai.com/v1").strip().rstrip("/")
+    model = config.get("ai_model", "gpt-4o-mini").strip()
+    url = f"{base_url}/chat/completions"
+
+    prompt = """You are an expert full-stack developer. Create a brand new, highly useful browser-based developer utility tool (e.g., QR Code Generator, Base64 Image Encoder, JWT Decoder, Regex Tester, Hash Generator, Color Palette, etc.).
 Return ONLY a valid JSON object (no markdown wrapping) with these exact keys:
 {
   "id": "unique_string_id",
@@ -121,17 +126,19 @@ Make sure the ID is unique and not in this existing list: """ + str(list(existin
 
     for idx, key in enumerate(keys):
         try:
-            log_message(f"Attempting AI tool generation using Key #{idx + 1}...")
+            log_message(f"Attempting AI request using Key #{idx + 1} (Endpoint: {base_url}, Model: {model})...")
             headers = {
                 "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json"
             }
             data = {
-                "model": "gpt-4o-mini",
+                "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.8
             }
-            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=35)
+            response = requests.post(url, headers=headers, json=data, timeout=40)
+            log_message(f"AI Response Status: {response.status_code}")
+            
             if response.status_code == 200:
                 res_json = response.json()
                 content = res_json["choices"][0]["message"]["content"].strip()
@@ -144,12 +151,12 @@ Make sure the ID is unique and not in this existing list: """ + str(list(existin
                     log_message(f"Successfully generated new tool via AI: {tool_data.get('name')}")
                     return tool_data
             else:
-                log_message(f"AI Key #{idx + 1} returned status {response.status_code}, switching to next key...")
+                log_message(f"AI Error response from Key #{idx + 1}: {response.text}")
         except Exception as e:
-            log_message(f"AI Key #{idx + 1} failed: {e}. Trying next key...")
+            log_message(f"AI Key #{idx + 1} exception error: {e}")
             continue
             
-    log_message("All configured AI API keys failed or exhausted during tool generation.")
+    log_message("All configured AI API keys failed during tool generation.")
     return None
 
 def auto_expand_and_sync():
@@ -477,10 +484,19 @@ ADMIN_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- AI 核心高级配置：支持自定义 Base URL 与 Model -->
             <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 space-y-4">
-                <h2 class="text-lg font-semibold text-indigo-300">AI Model Multi-Keys Integration (多密钥故障转移)</h2>
+                <h2 class="text-lg font-semibold text-indigo-300">AI Model & API Integration (大模型高级配置)</h2>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key，AI 将自动调用它们实时创造新工具)</label>
+                    <label class="block text-sm font-medium text-slate-300">AI API Base URL (接口地址，如官方 https://api.openai.com/v1 或第三方中转站)</label>
+                    <input type="text" name="ai_base_url" value="{{ config.ai_base_url }}" placeholder="https://api.openai.com/v1" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">AI Model Name (模型名称，如 gpt-4o-mini 或 deepseek-chat)</label>
+                    <input type="text" name="ai_model" value="{{ config.ai_model }}" placeholder="gpt-4o-mini" class="w-full mt-1 p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">AI API Keys (每行输入一个 Key，支持多密钥故障转移)</label>
                     <textarea name="ai_api_keys" rows="3" placeholder="sk-..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-100 font-mono text-sm">{{ config.ai_api_keys }}</textarea>
                 </div>
             </div>
@@ -561,6 +577,8 @@ def admin_save():
     config["token"] = request.form.get("token", "")
     config["custom_domain"] = request.form.get("custom_domain", "").strip()
     config["interval"] = int(request.form.get("interval", 3600))
+    config["ai_base_url"] = request.form.get("ai_base_url", "https://api.openai.com/v1").strip()
+    config["ai_model"] = request.form.get("ai_model", "gpt-4o-mini").strip()
     config["ai_api_keys"] = request.form.get("ai_api_keys", "").strip()
     config["ad_header"] = request.form.get("ad_header", "")
     config["ad_sidebar"] = request.form.get("ad_sidebar", "")
